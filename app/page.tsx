@@ -19,15 +19,19 @@ export default function Home() {
 				<Card className='w-full max-w-sm h-1/2'>
 					<CardHeader>
 						<CardTitle>Welcome to DoneKey</CardTitle>
-						<CardDescription>Choose your path</CardDescription>
+						<CardDescription>Choose your way</CardDescription>
 					</CardHeader>
 					<CardContent>
 						<div className='flex flex-col justify-between gap-5'>
 							<Button className='w-full' asChild>
-								<Link href='/login'>Sign Up Your Buisness</Link>
+								<Link href='/signup'>
+									Sign Up Your Buisness
+								</Link>
 							</Button>
 							<Button className='w-full' asChild>
-								<Link href='/login'>Sign Up as Worker</Link>
+								<Link href='/signup-worker'>
+									Sign Up as Worker
+								</Link>
 							</Button>
 							<Button
 								variant='outline'
