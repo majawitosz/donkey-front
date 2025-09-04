@@ -12,6 +12,7 @@ import {
 	CardFooter,
 } from '../ui/card';
 import { Input } from '../ui/input';
+import Link from 'next/link';
 
 export default function Login() {
 	return (
@@ -23,7 +24,9 @@ export default function Login() {
 						Enter your email below to login to your account
 					</CardDescription>
 					<CardAction>
-						<Button variant='link'>Sign Up</Button>
+						<Button variant='link'>
+							<Link href='/'>Sign Up</Link>
+						</Button>
 					</CardAction>
 				</CardHeader>
 				<CardContent>
