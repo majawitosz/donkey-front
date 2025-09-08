@@ -23,7 +23,6 @@ import { Input } from '@/components/ui/input';
 import z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { registerCompany } from '@/lib/actions';
 
 // const formSchema = z.object({
 //   company_name: z.string()
@@ -86,12 +85,28 @@ export default function SignUpForm() {
 	});
 	async function onSubmit(values: z.infer<typeof formSchema>) {
 		try {
-			const data = await registerCompany(values);
-			console.log('✅ Registered:', data);
-			// np. przekierowanie:
-			// router.push('/dashboard');
+			const response = await fetch(
+				`${process.env.NEXT_PUBLIC_API_URL}/register-company`,
+				{
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify(values),
+				}
+			);
+
+			if (!response.ok) {
+				const errorData = await response.json().catch(() => ({}));
+				throw new Error(errorData.detail || 'Something went wrong');
+			}
+
+			const data = await response.json();
+			console.log('Registered:', data);
+			return data;
 		} catch (err) {
-			console.error(err);
+			console.error('Register failed:', err);
+			throw err;
 		}
 	}
 

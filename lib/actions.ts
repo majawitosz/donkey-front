@@ -2,36 +2,36 @@
 
 'use server';
 
-import { Company } from './definitions/user';
+import { signIn } from '@/auth';
+import { AuthError } from 'next-auth';
 
-export async function registerCompany(values: Company) {
+// export async function Login(values: Credentials) {
+// 	 return await signIn('credentials', {
+//     redirect: false,
+//     email: formData.get('email'),
+//     password: formData.get('password'),
+//   });
+// }
+
+export async function authenticate(
+	prevState: string | undefined,
+	formData: FormData
+) {
 	try {
-		const response = await fetch(
-			`${process.env.NEXT_PUBLIC_API_URL}/register-company`,
-			{
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					accept: 'application/json',
-				},
-				body: JSON.stringify(values),
+		await signIn('credentials', {
+			email: formData.get('email'),
+			password: formData.get('password'),
+			redirect: false,
+		});
+	} catch (error) {
+		if (error instanceof AuthError) {
+			switch (error.type) {
+				case 'CredentialsSignin':
+					return 'Invalid credentials.';
+				default:
+					return 'Something went wrong.';
 			}
-		);
-
-		if (!response.ok) {
-			let errorMessage = 'Something went wrong';
-			try {
-				const errorData = await response.json();
-				errorMessage = errorData.detail || errorMessage;
-			} catch {}
-			throw new Error(errorMessage);
 		}
-
-		const data = await response.json();
-		console.log('Registered:', data);
-		return data;
-	} catch (err) {
-		console.error('❌ Register failed:', err);
-		throw err;
+		throw error;
 	}
 }
