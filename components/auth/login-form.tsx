@@ -21,7 +21,6 @@ import {
 import { Input } from '../ui/input';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
-import { signIn } from 'next-auth/react';
 import { Credentials } from '@/lib/definitions/user';
 import { authenticate } from '@/lib/actions';
 import { useActionState } from 'react';
