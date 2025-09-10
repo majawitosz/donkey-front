@@ -24,15 +24,18 @@ import { useForm } from 'react-hook-form';
 import { Credentials } from '@/lib/definitions/user';
 import { authenticate } from '@/lib/actions';
 import { useActionState } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 export default function Login() {
+	const searchParams = useSearchParams();
+	const prefillEmail = searchParams.get('email') ?? '';
 	const [errorMessage, formAction, isPending] = useActionState(
 		authenticate,
 		undefined
 	);
 	const form = useForm<Credentials>({
 		defaultValues: {
-			email: '',
+			email: prefillEmail,
 			password: '',
 		},
 	});

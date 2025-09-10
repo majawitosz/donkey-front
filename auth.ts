@@ -40,14 +40,18 @@ export const { auth, signIn, signOut } = NextAuth({
 
 				if (!res.ok) return null;
 				const data = await res.json();
+				console.log('auth.ts', data);
 
 				return {
-					id: data.user?.id,
-					email: data.user?.email,
+					email: data.user.email,
+					name: data.user.full_name,
+					role: data.user.role,
+					companyId: data.user.company_id,
 					accessToken: data.access,
 					refreshToken: data.refresh,
 				};
 			},
 		}),
 	],
+	callbacks: {},
 });

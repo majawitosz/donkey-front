@@ -2,6 +2,7 @@
 
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/ui/app-sidebar';
+import { UserProvider } from '@/components/providers/user-provider';
 
 export default function LayoutDashboard({
 	children,
@@ -10,7 +11,9 @@ export default function LayoutDashboard({
 }) {
 	return (
 		<SidebarProvider>
-			<AppSidebar />
+			<UserProvider>
+				<AppSidebar />
+			</UserProvider>
 			<main>
 				<SidebarTrigger />
 				{children}

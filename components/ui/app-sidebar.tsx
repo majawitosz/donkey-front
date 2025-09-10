@@ -1,4 +1,5 @@
 /** @format */
+'use client';
 
 import {
 	Calendar,
@@ -27,8 +28,9 @@ import {
 	DropdownMenuItem,
 	DropdownMenuTrigger,
 } from './dropdown-menu';
+import { signOutUser } from '@/lib/actions';
+import { UserProvider, useUser } from '@/components/providers/user-provider';
 
-// Menu items.
 const items = [
 	{
 		title: 'Home',
@@ -58,6 +60,7 @@ const items = [
 ];
 
 export function AppSidebar() {
+	const { user, isOwner, isEmployee } = useUser();
 	return (
 		<Sidebar>
 			<SidebarContent>
@@ -75,6 +78,28 @@ export function AppSidebar() {
 									</SidebarMenuButton>
 								</SidebarMenuItem>
 							))}
+
+							{/* Example role-based items */}
+							{isOwner && (
+								<SidebarMenuItem>
+									<SidebarMenuButton asChild>
+										<a href='#/owner'>
+											<Settings />
+											<span>Owner settings</span>
+										</a>
+									</SidebarMenuButton>
+								</SidebarMenuItem>
+							)}
+							{isEmployee && (
+								<SidebarMenuItem>
+									<SidebarMenuButton asChild>
+										<a href='#/worker'>
+											<User2 />
+											<span>Worker panel</span>
+										</a>
+									</SidebarMenuButton>
+								</SidebarMenuItem>
+							)}
 						</SidebarMenu>
 					</SidebarGroupContent>
 				</SidebarGroup>
@@ -84,7 +109,7 @@ export function AppSidebar() {
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
 									<SidebarMenuButton>
-										<User2 /> Username
+										<User2 /> {user?.full_name ?? 'Guest'}
 										<ChevronUp className='ml-auto' />
 									</SidebarMenuButton>
 								</DropdownMenuTrigger>
@@ -98,7 +123,9 @@ export function AppSidebar() {
 										<span>Billing</span>
 									</DropdownMenuItem>
 									<DropdownMenuItem>
-										<span>Sign out</span>
+										<form action={signOutUser}>
+											<button>Sign out</button>
+										</form>
 									</DropdownMenuItem>
 								</DropdownMenuContent>
 							</DropdownMenu>

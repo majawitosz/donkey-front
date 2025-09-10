@@ -23,55 +23,45 @@ import { Input } from '@/components/ui/input';
 import z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-
-// const formSchema = z.object({
-//   company_name: z.string()
-//     .min(2, { message: "Company name must be at least 2 characters." })
-//     .max(100, { message: "Company name too long." }),
-
-//   first_name: z.string()
-//     .min(2, { message: "First name must be at least 2 characters." })
-//     .max(50),
-
-//   last_name: z.string()
-//     .min(2, { message: "Last name must be at least 2 characters." })
-//     .max(50),
-
-//   nip: z.string()
-//     .regex(/^[0-9]{10}$/, { message: "NIP must be exactly 10 digits." }),
-
-//   email: z.string()
-//     .email({ message: "Invalid email address." }),
-
-//   password: z.string()
-//     .min(8, { message: "Password must be at least 8 characters." })
-//     .regex(/[A-Z]/, { message: "Password must contain at least 1 uppercase letter." })
-//     .regex(/[0-9]/, { message: "Password must contain at least 1 number." })
-//     .regex(/[@$!%*?&]/, { message: "Password must contain at least 1 special character (@$!%*?&)." }),
-// });
+import { useRouter } from 'next/navigation';
 
 const formSchema = z.object({
-	company_name: z.string().min(2, {
-		message: 'Username must be at least 2 characters.',
-	}),
-	first_name: z.string().min(2, {
-		message: 'Username must be at least 2 characters.',
-	}),
-	last_name: z.string().min(2, {
-		message: 'Username must be at least 2 characters.',
-	}),
-	nip: z.string().min(2, {
-		message: 'Username must be at least 2 characters.',
-	}),
-	email: z.string().min(2, {
-		message: 'Username must be at least 2 characters.',
-	}),
-	password: z.string().min(2, {
-		message: 'Username must be at least 2 characters.',
-	}),
+	company_name: z
+		.string()
+		.min(2, { message: 'Company name must be at least 2 characters.' })
+		.max(100, { message: 'Company name too long.' }),
+
+	first_name: z
+		.string()
+		.min(2, { message: 'First name must be at least 2 characters.' })
+		.max(50, { message: 'Name too long.' }),
+
+	last_name: z
+		.string()
+		.min(2, { message: 'Last name must be at least 2 characters.' })
+		.max(50, { message: 'Last name too long.' }),
+
+	nip: z
+		.string()
+		.regex(/^[0-9]{10}$/, { message: 'NIP must be exactly 10 digits.' }),
+
+	email: z.email({ message: 'Invalid email address.' }),
+
+	password: z
+		.string()
+		.min(8, { message: 'Password must be at least 8 characters.' })
+		.regex(/[A-Z]/, {
+			message: 'Password must contain at least 1 uppercase letter.',
+		})
+		.regex(/[0-9]/, { message: 'Password must contain at least 1 number.' })
+		.regex(/[@$!%*?&]/, {
+			message:
+				'Password must contain at least 1 special character (@$!%*?&).',
+		}),
 });
 
 export default function SignUpForm() {
+	const router = useRouter();
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
@@ -101,11 +91,9 @@ export default function SignUpForm() {
 				throw new Error(errorData.detail || 'Something went wrong');
 			}
 
-			const data = await response.json();
-			console.log('Registered:', data);
-			return data;
+			await response.json();
+			router.push(`/login?email=${encodeURIComponent(values.email)}`);
 		} catch (err) {
-			console.error('Register failed:', err);
 			throw err;
 		}
 	}
@@ -201,7 +189,7 @@ export default function SignUpForm() {
 											<FormControl>
 												<Input
 													placeholder='12345678901'
-													type='text'
+													type='number'
 													required
 													{...field}
 												/>
