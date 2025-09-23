@@ -10,7 +10,6 @@ import {
 	Settings,
 	User2,
 } from 'lucide-react';
-
 import {
 	Sidebar,
 	SidebarContent,
@@ -29,7 +28,8 @@ import {
 	DropdownMenuTrigger,
 } from './dropdown-menu';
 import { signOutUser } from '@/lib/actions';
-import { UserProvider, useUser } from '@/components/providers/user-provider';
+import { useUser } from '@/providers/user-provider';
+import { RoleEnum } from '@/lib/definitions/user';
 
 const items = [
 	{
@@ -60,7 +60,9 @@ const items = [
 ];
 
 export function AppSidebar() {
-	const { user, isOwner, isEmployee } = useUser();
+	const { user, isOwner, isEmployee, isManager } = useUser();
+	console.log(user);
+
 	return (
 		<Sidebar>
 			<SidebarContent>
@@ -79,7 +81,6 @@ export function AppSidebar() {
 								</SidebarMenuItem>
 							))}
 
-							{/* Example role-based items */}
 							{isOwner && (
 								<SidebarMenuItem>
 									<SidebarMenuButton asChild>
@@ -109,7 +110,7 @@ export function AppSidebar() {
 							<DropdownMenu>
 								<DropdownMenuTrigger asChild>
 									<SidebarMenuButton>
-										<User2 /> {user?.full_name ?? 'Guest'}
+										<User2 /> {user?.full_name ?? 'guest'}
 										<ChevronUp className='ml-auto' />
 									</SidebarMenuButton>
 								</DropdownMenuTrigger>

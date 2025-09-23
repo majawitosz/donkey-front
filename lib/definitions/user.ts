@@ -20,15 +20,15 @@ export type User = {
 	first_name: string;
 	last_name: string;
 	full_name: string;
-	role: string;
-	company_id: number | null;
-	company_name: string | null;
+	role: RoleEnum;
+	company_id: number;
+	company_name: string;
 	is_active: boolean;
 	is_staff: boolean;
 };
 
-type AuthResponse = {
-	access: string;
-	refresh: string;
-	user: User;
-};
+export enum RoleEnum {
+	OWNER = 'owner',
+	MANAGER = 'manager',
+	EMPLOYEE = 'employee',
+}

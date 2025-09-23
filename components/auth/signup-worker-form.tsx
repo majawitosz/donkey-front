@@ -1,6 +1,5 @@
 /** @format */
 'use client';
-import { Label } from '@/components/ui/label';
 import { Button } from '../ui/button';
 import {
 	Card,
@@ -30,6 +29,7 @@ import {
 	FormMessage,
 } from '@/components/ui/form';
 import { useRouter } from 'next/navigation';
+import { useAlert } from '@/providers/alert-provider';
 
 const formSchema = z.object({
 	first_name: z
@@ -59,6 +59,7 @@ const formSchema = z.object({
 
 export default function SignUpWorkerForm() {
 	const router = useRouter();
+	const { showAlert } = useAlert();
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
@@ -70,28 +71,30 @@ export default function SignUpWorkerForm() {
 		},
 	});
 	async function onSubmit(values: z.infer<typeof formSchema>) {
-		try {
-			const response = await fetch(
-				`${process.env.NEXT_PUBLIC_API_URL}/register`,
-				{
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-					},
-					body: JSON.stringify(values),
-				}
-			);
-
-			if (!response.ok) {
-				const errorData = await response.json().catch(() => ({}));
-				throw new Error(errorData.detail || 'Something went wrong');
+		const response = await fetch(
+			`${process.env.NEXT_PUBLIC_API_URL}/register`,
+			{
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(values),
 			}
+		);
 
-			await response.json();
-			router.push(`/login?email=${encodeURIComponent(values.email)}`);
-		} catch (err) {
-			throw err;
+		if (!response.ok) {
+			const errorData = await response.json().catch(() => ({}));
+			Object.entries(errorData).forEach(([field, messages]) => {
+				if (Array.isArray(messages)) {
+					form.setError(field as keyof z.infer<typeof formSchema>, {
+						type: 'server',
+						message: messages.join(', '),
+					});
+				}
+			});
 		}
+		await response.json();
+		router.push(`/login?email=${encodeURIComponent(values.email)}`);
 	}
 	return (
 		<Form {...form}>

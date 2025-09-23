@@ -23,11 +23,13 @@ import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { Credentials } from '@/lib/definitions/user';
 import { authenticate } from '@/lib/actions';
-import { useActionState } from 'react';
+import { useActionState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useAlert } from '@/providers/alert-provider';
 
 export default function Login() {
 	const searchParams = useSearchParams();
+	const { showAlert } = useAlert();
 	const prefillEmail = searchParams.get('email') ?? '';
 	const [errorMessage, formAction, isPending] = useActionState(
 		authenticate,
@@ -39,6 +41,15 @@ export default function Login() {
 			password: '',
 		},
 	});
+	useEffect(() => {
+		if (errorMessage) {
+			showAlert({
+				variant: 'error',
+				title: 'Login failed',
+				description: errorMessage,
+			});
+		}
+	}, [errorMessage, showAlert]);
 
 	return (
 		<Form {...form}>
@@ -115,13 +126,6 @@ export default function Login() {
 							aria-disabled={isPending}>
 							Login
 						</Button>
-						{errorMessage && (
-							<>
-								<p className='text-sm text-red-500'>
-									{errorMessage}
-								</p>
-							</>
-						)}
 						<Button variant='outline' className='w-full'>
 							Login with Google
 						</Button>

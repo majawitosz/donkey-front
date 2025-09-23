@@ -2,22 +2,25 @@
 
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/ui/app-sidebar';
-import { UserProvider } from '@/components/providers/user-provider';
+import { auth } from '@/auth';
+import { UserProvider } from '@/providers/user-provider';
 
-export default function LayoutDashboard({
+export default async function LayoutDashboard({
 	children,
 }: {
 	children: React.ReactNode;
 }) {
+	const session = await auth();
+	console.log(session);
 	return (
-		<SidebarProvider>
-			<UserProvider>
+		<UserProvider user={session?.user ?? null}>
+			<SidebarProvider>
 				<AppSidebar />
-			</UserProvider>
-			<main>
-				<SidebarTrigger />
-				{children}
-			</main>
-		</SidebarProvider>
+				<main>
+					<SidebarTrigger />
+					{children}
+				</main>
+			</SidebarProvider>
+		</UserProvider>
 	);
 }
