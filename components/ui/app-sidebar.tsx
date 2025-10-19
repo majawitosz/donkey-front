@@ -8,8 +8,9 @@ import {
 	Inbox,
 	Search,
 	Settings,
-	User,
 	User2,
+	UserSearch,
+	IdCardLanyard,
 } from 'lucide-react';
 import {
 	Sidebar,
@@ -39,9 +40,9 @@ const items = [
 		icon: Home,
 	},
 	{
-		title: 'Inbox',
-		url: '#',
-		icon: Inbox,
+		title: 'Positions',
+		url: '/dashboard/admin/positions',
+		icon: IdCardLanyard,
 	},
 	{
 		title: 'Calendar',
@@ -84,7 +85,7 @@ export function AppSidebar() {
 								<SidebarMenuItem>
 									<SidebarMenuButton asChild>
 										<a href='/dashboard/admin/employees'>
-											<User />
+											<UserSearch />
 											<span>Employees</span>
 										</a>
 									</SidebarMenuButton>

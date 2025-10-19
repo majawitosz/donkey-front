@@ -1,0 +1,302 @@
+/** @format */
+'use client';
+
+import * as React from 'react';
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from '@/components/ui/table';
+import { Button } from '@/components/ui/button';
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import {
+	fetchPositions,
+	createPosition,
+	updatePosition,
+	deletePosition,
+} from '@/lib/actions';
+import { Plus, Edit, Trash2 } from 'lucide-react';
+import {
+	Card,
+	CardContent,
+	CardHeader,
+	CardTitle,
+	CardDescription,
+} from '@/components/ui/card';
+
+interface Position {
+	id: number;
+	name: string;
+	created_at: string;
+}
+
+export default function PositionsPage() {
+	const [positions, setPositions] = React.useState<Position[]>([]);
+	const [loading, setLoading] = React.useState(true);
+	const [dialogOpen, setDialogOpen] = React.useState(false);
+	const [editingPosition, setEditingPosition] =
+		React.useState<Position | null>(null);
+	const [name, setName] = React.useState('');
+
+	const loadPositions = React.useCallback(async () => {
+		try {
+			const data = await fetchPositions();
+			setPositions(data);
+		} catch (error) {
+			console.error('Error fetching positions:', error);
+		} finally {
+			setLoading(false);
+		}
+	}, []);
+
+	React.useEffect(() => {
+		loadPositions();
+	}, [loadPositions]);
+
+	const handleCreate = async () => {
+		if (!name.trim()) return;
+		try {
+			await createPosition(name.trim());
+			setName('');
+			setDialogOpen(false);
+			loadPositions();
+		} catch (error) {
+			console.error('Error creating position:', error);
+		}
+	};
+
+	const handleUpdate = async () => {
+		if (!editingPosition || !name.trim()) return;
+		try {
+			await updatePosition(editingPosition.id, name.trim());
+			setName('');
+			setDialogOpen(false);
+			setEditingPosition(null);
+			loadPositions();
+		} catch (error) {
+			console.error('Error updating position:', error);
+		}
+	};
+
+	const handleDelete = async (id: number) => {
+		try {
+			await deletePosition(id);
+			loadPositions();
+		} catch (error) {
+			console.error('Error deleting position:', error);
+		}
+	};
+
+	const openEditDialog = (position: Position) => {
+		setEditingPosition(position);
+		setName(position.name);
+		setDialogOpen(true);
+	};
+
+	const openCreateDialog = () => {
+		setEditingPosition(null);
+		setName('');
+		setDialogOpen(true);
+	};
+
+	const closeDialog = () => {
+		setDialogOpen(false);
+		setEditingPosition(null);
+		setName('');
+	};
+
+	if (loading) {
+		return (
+			<div className='flex justify-center items-center min-h-screen'>
+				Loading...
+			</div>
+		);
+	}
+
+	return (
+		<div className='w-full px-4 py-10 flex justify-center'>
+			<Card className='w-full max-w-6xl'>
+				<CardHeader className='flex flex-row items-center justify-between gap-4'>
+					<div>
+						<CardTitle>Stanowiska</CardTitle>
+						<CardDescription>
+							Zarządzaj stanowiskami w Twojej firmie
+						</CardDescription>
+					</div>
+					<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+						<DialogTrigger asChild>
+							<Button onClick={openCreateDialog}>
+								<Plus className='mr-2 h-4 w-4' />
+								Dodaj stanowisko
+							</Button>
+						</DialogTrigger>
+						<DialogContent className='sm:max-w-[425px]'>
+							<DialogHeader>
+								<DialogTitle>
+									{editingPosition
+										? 'Edytuj stanowisko'
+										: 'Dodaj stanowisko'}
+								</DialogTitle>
+								<DialogDescription>
+									{editingPosition
+										? 'Zmień nazwę stanowiska.'
+										: 'Wprowadź nazwę nowego stanowiska.'}
+								</DialogDescription>
+							</DialogHeader>
+							<div className='grid gap-4 py-4'>
+								<div className='grid grid-cols-4 items-center gap-4'>
+									<Label
+										htmlFor='name'
+										className='text-right'>
+										Nazwa
+									</Label>
+									<Input
+										id='name'
+										value={name}
+										onChange={(e) =>
+											setName(e.target.value)
+										}
+										className='col-span-3'
+										placeholder='Nazwa stanowiska'
+									/>
+								</div>
+							</div>
+							<DialogFooter>
+								<Button
+									type='button'
+									variant='outline'
+									onClick={closeDialog}>
+									Anuluj
+								</Button>
+								<Button
+									type='button'
+									onClick={
+										editingPosition
+											? handleUpdate
+											: handleCreate
+									}
+									disabled={!name.trim()}>
+									{editingPosition ? 'Zapisz' : 'Dodaj'}
+								</Button>
+							</DialogFooter>
+						</DialogContent>
+					</Dialog>
+				</CardHeader>
+				<CardContent>
+					<div className='rounded-md border overflow-hidden'>
+						<Table>
+							<TableHeader>
+								<TableRow>
+									<TableHead>ID</TableHead>
+									<TableHead>Nazwa</TableHead>
+									<TableHead>Data utworzenia</TableHead>
+									<TableHead className='text-right'>
+										Akcje
+									</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								{positions.length === 0 ? (
+									<TableRow>
+										<TableCell
+											colSpan={4}
+											className='text-center'>
+											Brak stanowisk
+										</TableCell>
+									</TableRow>
+								) : (
+									positions.map((position) => (
+										<TableRow key={position.id}>
+											<TableCell>{position.id}</TableCell>
+											<TableCell>
+												{position.name}
+											</TableCell>
+											<TableCell>
+												{new Date(
+													position.created_at
+												).toLocaleDateString('pl-PL')}
+											</TableCell>
+											<TableCell className='text-right'>
+												<Button
+													variant='ghost'
+													size='sm'
+													onClick={() =>
+														openEditDialog(position)
+													}
+													className='mr-2'>
+													<Edit className='h-4 w-4' />
+												</Button>
+												<AlertDialog>
+													<AlertDialogTrigger asChild>
+														<Button
+															variant='ghost'
+															size='sm'>
+															<Trash2 className='h-4 w-4' />
+														</Button>
+													</AlertDialogTrigger>
+													<AlertDialogContent>
+														<AlertDialogHeader>
+															<AlertDialogTitle>
+																Czy na pewno?
+															</AlertDialogTitle>
+															<AlertDialogDescription>
+																Ta akcja jest
+																nieodwracalna.
+																Spowoduje trwałe
+																usunięcie
+																stanowiska "
+																{position.name}
+																".
+															</AlertDialogDescription>
+														</AlertDialogHeader>
+														<AlertDialogFooter>
+															<AlertDialogCancel>
+																Anuluj
+															</AlertDialogCancel>
+															<AlertDialogAction
+																onClick={() =>
+																	handleDelete(
+																		position.id
+																	)
+																}>
+																Usuń
+															</AlertDialogAction>
+														</AlertDialogFooter>
+													</AlertDialogContent>
+												</AlertDialog>
+											</TableCell>
+										</TableRow>
+									))
+								)}
+							</TableBody>
+						</Table>
+					</div>
+				</CardContent>
+			</Card>
+		</div>
+	);
+}
