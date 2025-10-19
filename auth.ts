@@ -44,7 +44,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
 				if (!res.ok) return null;
 				const data = await res.json();
 				console.log('auth.ts', data);
-
+				console.log(data.access);
 				return {
 					id: data.user.id,
 					email: data.user.email,
@@ -56,8 +56,8 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
 					company_name: data.user.company_name,
 					is_active: data.user.is_active,
 					is_staff: data.user.is_staff,
-					accessToken: data.accessToken,
-					refreshToken: data.refreshToken,
+					accessToken: data.access,
+					refreshToken: data.refresh,
 				};
 			},
 		}),
@@ -79,6 +79,8 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
 			return token;
 		},
 		async session({ session, token }: { session: Session; token: JWT }) {
+			console.log('session', session.user.accessToken);
+			console.log('token', token.accessToken);
 			session.user.id = token.id;
 			session.user.email = token.email;
 			session.user.full_name = token.full_name;
@@ -88,6 +90,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
 			session.user.company_id = token.company_id;
 			session.user.accessToken = token.accessToken;
 			session.user.refreshToken = token.refreshToken;
+
 			return session;
 		},
 	},

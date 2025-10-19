@@ -25,6 +25,8 @@ export type User = {
 	company_name: string;
 	is_active: boolean;
 	is_staff: boolean;
+	accessToken: string;
+	refreshToken: string;
 };
 
 export enum RoleEnum {

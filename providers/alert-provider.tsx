@@ -2,7 +2,13 @@
 
 'use client';
 
-import { createContext, useContext, useState, ReactNode } from 'react';
+import {
+	createContext,
+	useContext,
+	useState,
+	ReactNode,
+	useCallback,
+} from 'react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { AlertCircleIcon, CheckCircle2Icon } from 'lucide-react';
 
@@ -24,13 +30,14 @@ const AlertContext = createContext<AlertContextType | undefined>(undefined);
 export function AlertProvider({ children }: { children: ReactNode }) {
 	const [alert, setAlert] = useState<AlertData | null>(null);
 
-	const showAlert = (data: AlertData, timeout = 10000) => {
+	const showAlert = useCallback((data: AlertData, timeout = 10000) => {
 		setAlert(data);
 		if (timeout > 0) {
 			setTimeout(() => setAlert(null), timeout);
 		}
-	};
-	const clearAlert = () => setAlert(null);
+	}, []);
+
+	const clearAlert = useCallback(() => setAlert(null), []);
 
 	return (
 		<AlertContext.Provider value={{ showAlert, clearAlert }}>

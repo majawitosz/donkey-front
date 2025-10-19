@@ -11,7 +11,6 @@ export default async function LayoutDashboard({
 	children: React.ReactNode;
 }) {
 	const session = await auth();
-	console.log(session);
 	return (
 		<UserProvider user={session?.user ?? null}>
 			<SidebarProvider>

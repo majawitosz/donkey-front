@@ -8,6 +8,7 @@ import {
 	Inbox,
 	Search,
 	Settings,
+	User,
 	User2,
 } from 'lucide-react';
 import {
@@ -61,8 +62,6 @@ const items = [
 
 export function AppSidebar() {
 	const { user, isOwner, isEmployee, isManager } = useUser();
-	console.log(user);
-
 	return (
 		<Sidebar>
 			<SidebarContent>
@@ -84,9 +83,9 @@ export function AppSidebar() {
 							{isOwner && (
 								<SidebarMenuItem>
 									<SidebarMenuButton asChild>
-										<a href='#/owner'>
-											<Settings />
-											<span>Owner settings</span>
+										<a href='/dashboard/admin/employees'>
+											<User />
+											<span>Employees</span>
 										</a>
 									</SidebarMenuButton>
 								</SidebarMenuItem>
