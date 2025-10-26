@@ -11,6 +11,9 @@ import {
 	User2,
 	UserSearch,
 	IdCardLanyard,
+	GalleryVerticalEnd,
+	AudioWaveform,
+	Command,
 } from 'lucide-react';
 import {
 	Sidebar,
@@ -19,6 +22,7 @@ import {
 	SidebarGroup,
 	SidebarGroupContent,
 	SidebarGroupLabel,
+	SidebarHeader,
 	SidebarMenu,
 	SidebarMenuButton,
 	SidebarMenuItem,
@@ -32,11 +36,13 @@ import {
 import { signOutUser } from '@/lib/actions';
 import { useUser } from '@/providers/user-provider';
 import { RoleEnum } from '@/lib/definitions/user';
+import { TeamSwitcher } from './team-switcher';
+import { NavUser } from './nav-user';
 
-const items = [
+const data = [
 	{
 		title: 'Home',
-		url: '#',
+		url: '/dashboard',
 		icon: Home,
 	},
 	{
@@ -60,17 +66,42 @@ const items = [
 		icon: Settings,
 	},
 ];
+const teams = [
+	{
+		name: 'Acme Inc',
+		logo: GalleryVerticalEnd,
+		plan: 'Enterprise',
+	},
+	{
+		name: 'Acme Corp.',
+		logo: AudioWaveform,
+		plan: 'Startup',
+	},
+	{
+		name: 'Evil Corp.',
+		logo: Command,
+		plan: 'Free',
+	},
+];
 
 export function AppSidebar() {
 	const { user, isOwner, isEmployee, isManager } = useUser();
+	const navUser = {
+		name: user ? user.full_name : '',
+		email: user ? user.email : '',
+		avatar: 'https://i.pinimg.com/736x/5d/df/7f/5ddf7f72c2c0d387f0d1985154b171f5.jpg',
+	};
 	return (
-		<Sidebar>
+		<Sidebar collapsible='icon'>
+			<SidebarHeader>
+				<TeamSwitcher teams={teams} />
+			</SidebarHeader>
 			<SidebarContent>
 				<SidebarGroup>
 					<SidebarGroupLabel>Application</SidebarGroupLabel>
 					<SidebarGroupContent>
 						<SidebarMenu>
-							{items.map((item) => (
+							{data.map((item) => (
 								<SidebarMenuItem key={item.title}>
 									<SidebarMenuButton asChild>
 										<a href={item.url}>
@@ -104,36 +135,11 @@ export function AppSidebar() {
 						</SidebarMenu>
 					</SidebarGroupContent>
 				</SidebarGroup>
-				<SidebarFooter>
-					<SidebarMenu>
-						<SidebarMenuItem>
-							<DropdownMenu>
-								<DropdownMenuTrigger asChild>
-									<SidebarMenuButton>
-										<User2 /> {user?.full_name ?? 'guest'}
-										<ChevronUp className='ml-auto' />
-									</SidebarMenuButton>
-								</DropdownMenuTrigger>
-								<DropdownMenuContent
-									side='top'
-									className='w-[--radix-popper-anchor-width]'>
-									<DropdownMenuItem>
-										<span>Account</span>
-									</DropdownMenuItem>
-									<DropdownMenuItem>
-										<span>Billing</span>
-									</DropdownMenuItem>
-									<DropdownMenuItem>
-										<form action={signOutUser}>
-											<button>Sign out</button>
-										</form>
-									</DropdownMenuItem>
-								</DropdownMenuContent>
-							</DropdownMenu>
-						</SidebarMenuItem>
-					</SidebarMenu>
-				</SidebarFooter>
 			</SidebarContent>
+
+			<SidebarFooter>
+				<NavUser user={navUser} />
+			</SidebarFooter>
 		</Sidebar>
 	);
 }

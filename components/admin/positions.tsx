@@ -138,157 +138,147 @@ export default function PositionsPage() {
 	}
 
 	return (
-		<div className='w-full justify-center min-h-screen items-center py-20 px-10'>
-			<Card className='w-full max-w-lg'>
-				<CardHeader>
-					<CardTitle>Stanowiska</CardTitle>
-					<CardDescription>
-						Zarządzaj stanowiskami w Twojej firmie
-					</CardDescription>
+		<Card>
+			<CardHeader>
+				<CardTitle>Stanowiska</CardTitle>
+				<CardDescription>
+					Zarządzaj stanowiskami w Twojej firmie
+				</CardDescription>
 
-					<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-						<DialogTrigger asChild>
-							<Button onClick={openCreateDialog}>
-								<Plus className='mr-2 h-4 w-4' />
-								Dodaj stanowisko
-							</Button>
-						</DialogTrigger>
-						<DialogContent className='sm:max-w-[425px]'>
-							<DialogHeader>
-								<DialogTitle>
-									{editingPosition
-										? 'Edytuj stanowisko'
-										: 'Dodaj stanowisko'}
-								</DialogTitle>
-								<DialogDescription>
-									{editingPosition
-										? 'Zmień nazwę stanowiska.'
-										: 'Wprowadź nazwę nowego stanowiska.'}
-								</DialogDescription>
-							</DialogHeader>
-							<div className='grid gap-4 py-4'>
-								<div className='grid grid-cols-4 items-center gap-4'>
-									<Label
-										htmlFor='name'
-										className='text-right'>
-										Nazwa
-									</Label>
-									<Input
-										id='name'
-										value={name}
-										onChange={(e) =>
-											setName(e.target.value)
-										}
-										className='col-span-3'
-										placeholder='Nazwa stanowiska'
-									/>
-								</div>
+				<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+					<DialogTrigger asChild>
+						<Button onClick={openCreateDialog}>
+							<Plus className='mr-2 h-4 w-4' />
+							Dodaj stanowisko
+						</Button>
+					</DialogTrigger>
+					<DialogContent className='sm:max-w-[425px]'>
+						<DialogHeader>
+							<DialogTitle>
+								{editingPosition
+									? 'Edytuj stanowisko'
+									: 'Dodaj stanowisko'}
+							</DialogTitle>
+							<DialogDescription>
+								{editingPosition
+									? 'Zmień nazwę stanowiska.'
+									: 'Wprowadź nazwę nowego stanowiska.'}
+							</DialogDescription>
+						</DialogHeader>
+						<div className='grid gap-4 py-4'>
+							<div className='grid grid-cols-4 items-center gap-4'>
+								<Label htmlFor='name' className='text-right'>
+									Nazwa
+								</Label>
+								<Input
+									id='name'
+									value={name}
+									onChange={(e) => setName(e.target.value)}
+									className='col-span-3'
+									placeholder='Nazwa stanowiska'
+								/>
 							</div>
-							<DialogFooter>
-								<Button
-									type='button'
-									variant='outline'
-									onClick={closeDialog}>
-									Anuluj
-								</Button>
-								<Button
-									type='button'
-									onClick={
-										editingPosition
-											? handleUpdate
-											: handleCreate
-									}
-									disabled={!name.trim()}>
-									{editingPosition ? 'Zapisz' : 'Dodaj'}
-								</Button>
-							</DialogFooter>
-						</DialogContent>
-					</Dialog>
-				</CardHeader>
+						</div>
+						<DialogFooter>
+							<Button
+								type='button'
+								variant='outline'
+								onClick={closeDialog}>
+								Anuluj
+							</Button>
+							<Button
+								type='button'
+								onClick={
+									editingPosition
+										? handleUpdate
+										: handleCreate
+								}
+								disabled={!name.trim()}>
+								{editingPosition ? 'Zapisz' : 'Dodaj'}
+							</Button>
+						</DialogFooter>
+					</DialogContent>
+				</Dialog>
+			</CardHeader>
 
-				<div className='rounded-md border m-10 '>
-					<Table>
-						<TableHeader>
+			<div className='rounded-md border m-10 '>
+				<Table>
+					<TableHeader>
+						<TableRow>
+							<TableHead>Nazwa</TableHead>
+							<TableHead>Data utworzenia</TableHead>
+							<TableHead className='text-right'>Akcje</TableHead>
+						</TableRow>
+					</TableHeader>
+					<TableBody>
+						{positions.length === 0 ? (
 							<TableRow>
-								<TableHead>Nazwa</TableHead>
-								<TableHead>Data utworzenia</TableHead>
-								<TableHead className='text-right'>
-									Akcje
-								</TableHead>
+								<TableCell colSpan={4} className='text-center'>
+									Brak stanowisk
+								</TableCell>
 							</TableRow>
-						</TableHeader>
-						<TableBody>
-							{positions.length === 0 ? (
-								<TableRow>
-									<TableCell
-										colSpan={4}
-										className='text-center'>
-										Brak stanowisk
+						) : (
+							positions.map((position) => (
+								<TableRow key={position.id}>
+									<TableCell>{position.name}</TableCell>
+									<TableCell>
+										{new Date(
+											position.created_at
+										).toLocaleDateString('pl-PL')}
+									</TableCell>
+									<TableCell className='text-right'>
+										<Button
+											variant='ghost'
+											size='sm'
+											onClick={() =>
+												openEditDialog(position)
+											}
+											className='mr-2'>
+											<Edit className='h-4 w-4' />
+										</Button>
+										<AlertDialog>
+											<AlertDialogTrigger asChild>
+												<Button
+													variant='ghost'
+													size='sm'>
+													<Trash2 className='h-4 w-4' />
+												</Button>
+											</AlertDialogTrigger>
+											<AlertDialogContent>
+												<AlertDialogHeader>
+													<AlertDialogTitle>
+														Czy na pewno?
+													</AlertDialogTitle>
+													<AlertDialogDescription>
+														Ta akcja jest
+														nieodwracalna. Spowoduje
+														trwałe usunięcie
+														stanowiska "
+														{position.name}".
+													</AlertDialogDescription>
+												</AlertDialogHeader>
+												<AlertDialogFooter>
+													<AlertDialogCancel>
+														Anuluj
+													</AlertDialogCancel>
+													<AlertDialogAction
+														onClick={() =>
+															handleDelete(
+																position.id
+															)
+														}>
+														Usuń
+													</AlertDialogAction>
+												</AlertDialogFooter>
+											</AlertDialogContent>
+										</AlertDialog>
 									</TableCell>
 								</TableRow>
-							) : (
-								positions.map((position) => (
-									<TableRow key={position.id}>
-										<TableCell>{position.name}</TableCell>
-										<TableCell>
-											{new Date(
-												position.created_at
-											).toLocaleDateString('pl-PL')}
-										</TableCell>
-										<TableCell className='text-right'>
-											<Button
-												variant='ghost'
-												size='sm'
-												onClick={() =>
-													openEditDialog(position)
-												}
-												className='mr-2'>
-												<Edit className='h-4 w-4' />
-											</Button>
-											<AlertDialog>
-												<AlertDialogTrigger asChild>
-													<Button
-														variant='ghost'
-														size='sm'>
-														<Trash2 className='h-4 w-4' />
-													</Button>
-												</AlertDialogTrigger>
-												<AlertDialogContent>
-													<AlertDialogHeader>
-														<AlertDialogTitle>
-															Czy na pewno?
-														</AlertDialogTitle>
-														<AlertDialogDescription>
-															Ta akcja jest
-															nieodwracalna.
-															Spowoduje trwałe
-															usunięcie stanowiska
-															"{position.name}".
-														</AlertDialogDescription>
-													</AlertDialogHeader>
-													<AlertDialogFooter>
-														<AlertDialogCancel>
-															Anuluj
-														</AlertDialogCancel>
-														<AlertDialogAction
-															onClick={() =>
-																handleDelete(
-																	position.id
-																)
-															}>
-															Usuń
-														</AlertDialogAction>
-													</AlertDialogFooter>
-												</AlertDialogContent>
-											</AlertDialog>
-										</TableCell>
-									</TableRow>
-								))
-							)}
-						</TableBody>
-					</Table>
-				</div>
-			</Card>
-		</div>
+							))
+						)}
+					</TableBody>
+				</Table>
+			</div>
+		</Card>
 	);
 }

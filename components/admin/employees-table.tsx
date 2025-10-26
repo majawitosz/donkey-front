@@ -202,7 +202,7 @@ export default function EmployeesTable() {
 	}
 
 	return (
-		<div className='w-fulflex w-full justify-center min-h-screen items-centerl py-20 px-10'>
+		<>
 			<div className='flex items-center py-4'>
 				<Input
 					placeholder='Search employees by email...'
@@ -304,6 +304,6 @@ export default function EmployeesTable() {
 					</Button>
 				</div>
 			</div>
-		</div>
+		</>
 	);
 }

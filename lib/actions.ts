@@ -5,6 +5,83 @@
 import { signIn, signOut, auth } from '@/auth';
 import { AuthError } from 'next-auth';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
+
+function resolveApiUrl(endpoint: string | URL): string {
+	if (endpoint instanceof URL) {
+		return endpoint.toString();
+	}
+	if (/^https?:\/\//i.test(endpoint)) {
+		return endpoint;
+	}
+	if (!API_BASE_URL) {
+		throw new Error('API base URL is not defined');
+	}
+	return new URL(endpoint, API_BASE_URL).toString();
+}
+
+async function getAccessToken(): Promise<string> {
+	const session = await auth();
+	if (!session?.user?.accessToken) {
+		throw new Error('No access token');
+	}
+	return session.user.accessToken;
+}
+
+async function authorizedFetch(
+	endpoint: string | URL,
+	init: RequestInit = {}
+): Promise<Response> {
+	const accessToken = await getAccessToken();
+	const headers = new Headers(init.headers);
+
+	if (!headers.has('Authorization')) {
+		headers.set('Authorization', `Bearer ${accessToken}`);
+	}
+
+	if (init.body && !headers.has('Content-Type')) {
+		headers.set('Content-Type', 'application/json');
+	}
+
+	return fetch(resolveApiUrl(endpoint), {
+		...init,
+		headers,
+	});
+}
+
+async function apiRequest<T>(
+	endpoint: string | URL,
+	init: RequestInit,
+	errorMessage: string
+): Promise<T> {
+	const response = await authorizedFetch(endpoint, init);
+
+	if (!response.ok) {
+		console.error(`${errorMessage}:`, response.status, response.statusText);
+		try {
+			const errorText = await response.text();
+			console.error('Response body:', errorText);
+		} catch (error) {
+			console.error('Could not read response body', error);
+		}
+		throw new Error(errorMessage);
+	}
+
+	if (response.status === 204) {
+		return undefined as T;
+	}
+
+	return response.json() as Promise<T>;
+}
+
+type CompanyCodeResponse = {
+	code: string;
+};
+
+type EmployeeCountResponse = {
+	count: number;
+};
+
 export async function authenticate(
 	prevState: string | undefined,
 	formData: FormData
@@ -30,170 +107,46 @@ export async function authenticate(
 
 export async function signOutUser() {
 	await signOut({
+		redirect: true,
 		redirectTo: '/',
 	});
 }
 
 export async function fetchEmployees(search?: string) {
-	const session = await auth();
-	if (!session?.user?.accessToken) {
-		throw new Error('No access token');
-	}
-
-	const url = new URL(`${process.env.NEXT_PUBLIC_API_URL}/employees/`);
+	const url = new URL('employees/', API_BASE_URL);
 	if (search) {
 		url.searchParams.set('search', search);
 	}
-	console.log('Fetching employees from:', url.toString());
-
-	const response = await fetch(url.toString(), {
-		method: 'GET',
-		headers: {
-			Authorization: `Bearer ${session.user.accessToken}`,
-			'Content-Type': 'application/json',
-		},
-	});
-
-	if (!response.ok) {
-		console.error(
-			'Failed to fetch employees:',
-			response.status,
-			response.statusText
-		);
-		try {
-			const errorText = await response.text();
-			console.error('Response body:', errorText);
-		} catch (e) {
-			console.error('Could not read response body');
-		}
-		throw new Error('Failed to fetch employees');
-	}
-
-	return response.json();
+	return apiRequest(url, { method: 'GET' }, 'Failed to fetch employees');
 }
 
 export async function fetchPositions() {
-	const session = await auth();
-	if (!session?.user?.accessToken) {
-		throw new Error('No access token');
-	}
-
-	const url = `${process.env.NEXT_PUBLIC_API_URL}/positions/`;
-	console.log('Fetching positions from:', url);
-
-	const response = await fetch(url, {
-		method: 'GET',
-		headers: {
-			Authorization: `Bearer ${session.user.accessToken}`,
-			'Content-Type': 'application/json',
-		},
-	});
-
-	if (!response.ok) {
-		console.error(
-			'Failed to fetch positions:',
-			response.status,
-			response.statusText
-		);
-		try {
-			const errorText = await response.text();
-			console.error('Response body:', errorText);
-		} catch (e) {
-			console.error('Could not read response body');
-		}
-		throw new Error('Failed to fetch positions');
-	}
-
-	return response.json();
+	return apiRequest(
+		'positions/',
+		{ method: 'GET' },
+		'Failed to fetch positions'
+	);
 }
 
 export async function createPosition(name: string) {
-	const session = await auth();
-	if (!session?.user?.accessToken) {
-		throw new Error('No access token');
-	}
-
-	const url = `${process.env.NEXT_PUBLIC_API_URL}/positions/`;
-	console.log('Creating position at:', url);
-
-	const response = await fetch(url, {
-		method: 'POST',
-		headers: {
-			Authorization: `Bearer ${session.user.accessToken}`,
-			'Content-Type': 'application/json',
-		},
-		body: JSON.stringify({ name }),
-	});
-
-	if (!response.ok) {
-		console.error(
-			'Failed to create position:',
-			response.status,
-			response.statusText
-		);
-		try {
-			const errorText = await response.text();
-			console.error('Response body:', errorText);
-		} catch (e) {
-			console.error('Could not read response body');
-		}
-		throw new Error('Failed to create position');
-	}
-
-	return response.json();
+	return apiRequest(
+		'positions/',
+		{ method: 'POST', body: JSON.stringify({ name }) },
+		'Failed to create position'
+	);
 }
 
 export async function updatePosition(id: number, name: string) {
-	const session = await auth();
-	if (!session?.user?.accessToken) {
-		throw new Error('No access token');
-	}
-
-	const url = `${process.env.NEXT_PUBLIC_API_URL}/positions/${id}/`;
-	console.log('Updating position at:', url);
-
-	const response = await fetch(url, {
-		method: 'PUT',
-		headers: {
-			Authorization: `Bearer ${session.user.accessToken}`,
-			'Content-Type': 'application/json',
-		},
-		body: JSON.stringify({ name }),
-	});
-
-	if (!response.ok) {
-		console.error(
-			'Failed to update position:',
-			response.status,
-			response.statusText
-		);
-		try {
-			const errorText = await response.text();
-			console.error('Response body:', errorText);
-		} catch (e) {
-			console.error('Could not read response body');
-		}
-		throw new Error('Failed to update position');
-	}
-
-	return response.json();
+	return apiRequest(
+		`positions/${id}/`,
+		{ method: 'PUT', body: JSON.stringify({ name }) },
+		'Failed to update position'
+	);
 }
 
 export async function deletePosition(id: number) {
-	const session = await auth();
-	if (!session?.user?.accessToken) {
-		throw new Error('No access token');
-	}
-
-	const url = `${process.env.NEXT_PUBLIC_API_URL}/positions/${id}/`;
-	console.log('Deleting position at:', url);
-
-	const response = await fetch(url, {
+	const response = await authorizedFetch(`positions/${id}/`, {
 		method: 'DELETE',
-		headers: {
-			Authorization: `Bearer ${session.user.accessToken}`,
-			'Content-Type': 'application/json',
-		},
 	});
 
 	if (!response.ok) {
@@ -205,11 +158,43 @@ export async function deletePosition(id: number) {
 		try {
 			const errorText = await response.text();
 			console.error('Response body:', errorText);
-		} catch (e) {
-			console.error('Could not read response body');
+		} catch (error) {
+			console.error('Could not read response body', error);
 		}
 		throw new Error('Failed to delete position');
 	}
 
 	return true;
+}
+
+export async function fetchCompanyCode(): Promise<CompanyCodeResponse> {
+	return apiRequest<CompanyCodeResponse>(
+		'companycode/',
+		{ method: 'GET' },
+		'Failed to fetch company code'
+	);
+}
+
+export async function generateCompanyCode(): Promise<CompanyCodeResponse> {
+	return apiRequest<CompanyCodeResponse>(
+		'companycode/reset/',
+		{ method: 'POST' },
+		'Failed to generate company code'
+	);
+}
+
+export async function resetCompanyCode(): Promise<CompanyCodeResponse> {
+	return apiRequest<CompanyCodeResponse>(
+		'company/reset-code/',
+		{ method: 'POST' },
+		'Failed to reset company code'
+	);
+}
+
+export async function fetchEmployeeCount(): Promise<EmployeeCountResponse> {
+	return apiRequest<EmployeeCountResponse>(
+		'employees/count/',
+		{ method: 'GET' },
+		'Failed to fetch employee count'
+	);
 }

@@ -4,7 +4,8 @@
 'use client';
 
 import { RoleEnum, User } from '@/lib/definitions/user';
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
 
 const UserContext = createContext<User | null>(null);
 
@@ -15,7 +16,22 @@ export function UserProvider({
 	user: User | null;
 	children: React.ReactNode;
 }) {
-	return <UserContext.Provider value={user}>{children}</UserContext.Provider>;
+	const [value, setValue] = useState<User | null>(user);
+	const { data } = useSession();
+
+	useEffect(() => {
+		setValue(user);
+	}, [user]);
+
+	useEffect(() => {
+		if (data?.user) {
+			setValue(data.user as User);
+		}
+	}, [data]);
+
+	return (
+		<UserContext.Provider value={value}>{children}</UserContext.Provider>
+	);
 }
 
 export function useUser() {

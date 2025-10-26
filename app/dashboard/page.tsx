@@ -1,9 +1,7 @@
 /** @format */
 
+import AddEmployeeSection from '@/components/admin/add-employee-section';
+
 export default function Dashboard() {
-	return (
-		<div>
-			<h1>Dashboard</h1>
-		</div>
-	);
+	return <AddEmployeeSection />;
 }

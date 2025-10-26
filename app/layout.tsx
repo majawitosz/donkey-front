@@ -5,6 +5,7 @@ import { Geist, Geist_Mono } from 'next/font/google';
 import { ThemeProvider } from '@/providers/theme-provider';
 import './globals.css';
 import { AlertProvider } from '@/providers/alert-provider';
+import { SessionProvider } from 'next-auth/react';
 
 const geistSans = Geist({
 	variable: '--font-geist-sans',
@@ -29,13 +30,15 @@ export default function RootLayout({
 	return (
 		<html lang='en' suppressHydrationWarning>
 			<body className={`${geistSans.className}  antialiased`}>
-				<ThemeProvider
-					attribute='class'
-					defaultTheme='system'
-					enableSystem
-					disableTransitionOnChange>
-					<AlertProvider>{children}</AlertProvider>
-				</ThemeProvider>
+				<SessionProvider>
+					<ThemeProvider
+						attribute='class'
+						defaultTheme='system'
+						enableSystem
+						disableTransitionOnChange>
+						<AlertProvider>{children}</AlertProvider>
+					</ThemeProvider>
+				</SessionProvider>
 			</body>
 		</html>
 	);

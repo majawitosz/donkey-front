@@ -19,6 +19,8 @@ declare module 'next-auth' {
 			accessToken: string;
 			refreshToken: string;
 		};
+		accessTokenExpires?: number;
+		error?: string;
 	}
 
 	interface User {
@@ -51,5 +53,7 @@ declare module 'next-auth/jwt' {
 		is_staff: boolean;
 		accessToken: string;
 		refreshToken: string;
+		accessTokenExpires?: number;
+		error?: string;
 	}
 }
