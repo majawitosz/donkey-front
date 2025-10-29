@@ -2,18 +2,30 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import {
+	Card,
+	CardHeader,
+	CardTitle,
+	CardContent,
+	CardDescription,
+	CardFooter,
+} from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import {
 	fetchCompanyCode,
 	generateCompanyCode,
-	resetCompanyCode,
-	fetchEmployeeCount,
+	fetchEmployees,
 } from '@/lib/actions';
 import { useAlert } from '@/providers/alert-provider';
+import type { components } from '@/lib/types/openapi';
+
+type CompanyCodeResponse = components['schemas']['CompanyCode'];
 
 export default function AddEmployeeSection() {
-	const [companyCode, setCompanyCode] = useState<string | null>(null);
+	const [companyCode, setCompanyCode] = useState<CompanyCodeResponse | null>(
+		null
+	);
 	const [employeeCount, setEmployeeCount] = useState<number>(0);
 	const [loading, setLoading] = useState(false);
 	const { showAlert } = useAlert();
@@ -24,12 +36,12 @@ export default function AddEmployeeSection() {
 
 	const loadData = async () => {
 		try {
-			const [codeData, countData] = await Promise.all([
+			const [codeData, employees] = await Promise.all([
 				fetchCompanyCode(),
-				fetchEmployeeCount(),
+				fetchEmployees(),
 			]);
-			setCompanyCode(codeData.code);
-			setEmployeeCount(countData.count);
+			setCompanyCode(codeData);
+			setEmployeeCount(employees.length);
 		} catch (error) {
 			showAlert({ variant: 'error', title: 'Error loading data' });
 		}
@@ -39,34 +51,15 @@ export default function AddEmployeeSection() {
 		setLoading(true);
 		try {
 			const data = await generateCompanyCode();
-			setCompanyCode(data.code);
+			setCompanyCode(data);
 			showAlert({
 				variant: 'success',
-				title: 'Company code generated successfully',
+				title: 'Kod firmowy wygenerowany pomyślnie',
 			});
 		} catch (error) {
 			showAlert({
 				variant: 'error',
-				title: 'Failed to generate company code',
-			});
-		} finally {
-			setLoading(false);
-		}
-	};
-
-	const handleResetCode = async () => {
-		setLoading(true);
-		try {
-			const data = await resetCompanyCode();
-			setCompanyCode(data.code);
-			showAlert({
-				variant: 'success',
-				title: 'Company code reset successfully',
-			});
-		} catch (error) {
-			showAlert({
-				variant: 'error',
-				title: 'Failed to reset company code',
+				title: 'Nie udało się wygenerować kodu',
 			});
 		} finally {
 			setLoading(false);
@@ -76,36 +69,43 @@ export default function AddEmployeeSection() {
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>Dodaj nowego pracownika</CardTitle>
+				<CardTitle className='text-xl font-semibold tabular-nums @[250px]/card:text-3xl'>
+					Dodaj nowego pracownika
+				</CardTitle>
 			</CardHeader>
+
 			<CardContent>
 				<div className='space-y-4'>
 					<div>
-						<p className='text-sm text-muted-foreground'>
-							Aktualna liczba pracowników: {employeeCount}
+						<p className='text-sm font-medium'>Kod firmowy:</p>
+						<p className='text-lg font-mono bg-muted p-2 rounded'>
+							{companyCode?.company_code || 'Brak kodu'}
 						</p>
 					</div>
 					<div>
-						<p className='text-sm font-medium'>Business Code:</p>
-						<p className='text-lg font-mono bg-muted p-2 rounded'>
-							{companyCode || 'Brak kodu'}
-						</p>
-					</div>
-					<div className='flex gap-2'>
-						<Button onClick={handleGenerateCode} disabled={loading}>
-							{companyCode
-								? 'Wygeneruj nowy kod'
-								: 'Wygeneruj kod'}
-						</Button>
-						<Button
-							variant='outline'
-							onClick={handleResetCode}
-							disabled={loading || !companyCode}>
-							Zresetuj kod
-						</Button>
+						{loading ? (
+							<Button disabled size='sm'>
+								<Spinner />
+								Ładowanie...
+							</Button>
+						) : (
+							<Button onClick={handleGenerateCode}>
+								{companyCode
+									? 'Wygeneruj nowy kod'
+									: 'Wygeneruj kod'}
+							</Button>
+						)}
 					</div>
 				</div>
 			</CardContent>
+			<CardFooter className='flex-col items-start gap-1.5 text-sm'>
+				<div className='line-clamp-1 flex gap-2 font-medium'>
+					Aktualna liczba pracowników
+				</div>
+				<div className='text-2xl font-semibold tabular-nums @[250px]/card:text-3xl'>
+					{employeeCount}
+				</div>
+			</CardFooter>
 		</Card>
 	);
 }

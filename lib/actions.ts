@@ -4,8 +4,22 @@
 
 import { signIn, signOut, auth } from '@/auth';
 import { AuthError } from 'next-auth';
+import type { components } from '@/lib/types/openapi';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL + '/accounts/';
+
+type Position = components['schemas']['Position'];
+type UserDetail = components['schemas']['UserList'];
+type AvailabilityOut = components['schemas']['AvailabilityOut'];
+type CompanyCodeResponse = components['schemas']['CompanyCode'];
+
+// Typ dla odpowiedzi z paginacją
+type PaginatedResponse<T> = {
+	count: number;
+	next: string | null;
+	previous: string | null;
+	results: T[];
+};
 
 function resolveApiUrl(endpoint: string | URL): string {
 	if (endpoint instanceof URL) {
@@ -74,14 +88,6 @@ async function apiRequest<T>(
 	return response.json() as Promise<T>;
 }
 
-type CompanyCodeResponse = {
-	code: string;
-};
-
-type EmployeeCountResponse = {
-	count: number;
-};
-
 export async function authenticate(
 	prevState: string | undefined,
 	formData: FormData
@@ -112,32 +118,39 @@ export async function signOutUser() {
 	});
 }
 
-export async function fetchEmployees(search?: string) {
+export async function fetchEmployees(search?: string): Promise<UserDetail[]> {
 	const url = new URL('employees/', API_BASE_URL);
 	if (search) {
 		url.searchParams.set('search', search);
 	}
-	return apiRequest(url, { method: 'GET' }, 'Failed to fetch employees');
+	return apiRequest<UserDetail[]>(
+		url,
+		{ method: 'GET' },
+		'Failed to fetch employees'
+	);
 }
 
-export async function fetchPositions() {
-	return apiRequest(
+export async function fetchPositions(): Promise<Position[]> {
+	return apiRequest<Position[]>(
 		'positions/',
 		{ method: 'GET' },
 		'Failed to fetch positions'
 	);
 }
 
-export async function createPosition(name: string) {
-	return apiRequest(
+export async function createPosition(name: string): Promise<Position> {
+	return apiRequest<Position>(
 		'positions/',
 		{ method: 'POST', body: JSON.stringify({ name }) },
 		'Failed to create position'
 	);
 }
 
-export async function updatePosition(id: number, name: string) {
-	return apiRequest(
+export async function updatePosition(
+	id: number,
+	name: string
+): Promise<Position> {
+	return apiRequest<Position>(
 		`positions/${id}/`,
 		{ method: 'PUT', body: JSON.stringify({ name }) },
 		'Failed to update position'
@@ -191,10 +204,36 @@ export async function resetCompanyCode(): Promise<CompanyCodeResponse> {
 	);
 }
 
-export async function fetchEmployeeCount(): Promise<EmployeeCountResponse> {
-	return apiRequest<EmployeeCountResponse>(
-		'employees/count/',
-		{ method: 'GET' },
-		'Failed to fetch employee count'
+export async function fetchAvailability(params?: {
+	employee_id?: string;
+	date_from?: string;
+	date_to?: string;
+	only_with_slots?: boolean;
+	limit?: number;
+	offset?: number;
+}): Promise<AvailabilityOut[]> {
+	// Używamy pełnego URL, ponieważ schedule jest pod inną ścieżką niż accounts
+	const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+	const fullUrl = `${baseUrl}/schedule/availability`;
+	const url = new URL(fullUrl);
+
+	// Backend FastAPI wymaga WSZYSTKICH parametrów, więc podajemy wartości domyślne
+	url.searchParams.set('employee_id', params?.employee_id || '');
+	url.searchParams.set('date_from', params?.date_from || '');
+	url.searchParams.set('date_to', params?.date_to || '');
+	url.searchParams.set(
+		'only_with_slots',
+		String(params?.only_with_slots ?? false)
 	);
+	url.searchParams.set('limit', String(params?.limit ?? 100));
+	url.searchParams.set('offset', String(params?.offset ?? 0));
+
+	const response = await apiRequest<PaginatedResponse<AvailabilityOut>>(
+		url,
+		{ method: 'GET' },
+		'Failed to fetch availability'
+	);
+
+	// Zwracamy tylko tablicę results z odpowiedzi paginowanej
+	return response.results;
 }

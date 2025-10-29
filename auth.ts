@@ -24,7 +24,7 @@ async function refreshAccessToken(token: JWT): Promise<JWT> {
 
 	try {
 		const response = await fetch(
-			`${process.env.NEXT_PUBLIC_API_URL}/token/refresh/`,
+			`${process.env.NEXT_PUBLIC_API_URL}/accounts/token/refresh`,
 			{
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
@@ -80,7 +80,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
 				}
 				const { email, password } = credentials;
 				const res = await fetch(
-					`${process.env.NEXT_PUBLIC_API_URL}/login`,
+					`${process.env.NEXT_PUBLIC_API_URL}/accounts/login`,
 					{
 						method: 'POST',
 						headers: { 'Content-Type': 'application/json' },
@@ -142,8 +142,10 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
 				token.is_staff = typedUser.is_staff;
 				token.accessToken = typedUser.accessToken;
 				token.refreshToken = typedUser.refreshToken;
+
 				try {
 					const decoded = decodeJwtPayload(token.accessToken);
+					console.log('token', token.accessToken);
 					token.accessTokenExpires = decoded.exp * 1000;
 				} catch (error) {
 					console.error(

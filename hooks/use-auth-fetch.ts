@@ -37,7 +37,7 @@ export function useAuthFetch() {
 
 			try {
 				const response = await fetch(
-					`${process.env.NEXT_PUBLIC_API_URL}/token/refresh/`,
+					`${process.env.NEXT_PUBLIC_API_URL}/accounts/token/refresh`,
 					{
 						method: 'POST',
 						headers: { 'Content-Type': 'application/json' },

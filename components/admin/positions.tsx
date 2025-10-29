@@ -47,12 +47,10 @@ import {
 	CardHeader,
 	CardTitle,
 } from '@/components/ui/card';
+import type { components } from '@/lib/types/openapi';
+import { Spinner } from '../ui/spinner';
 
-interface Position {
-	id: number;
-	name: string;
-	created_at: string;
-}
+type Position = components['schemas']['Position'];
 
 export default function PositionsPage() {
 	const [positions, setPositions] = React.useState<Position[]>([]);
@@ -131,8 +129,8 @@ export default function PositionsPage() {
 
 	if (loading) {
 		return (
-			<div className='flex justify-center items-center min-h-screen'>
-				Loading...
+			<div className='flex items-center gap-8 justify-center min-h-svh'>
+				<Spinner className='size-8' />
 			</div>
 		);
 	}

@@ -3,9 +3,9 @@
 // providers/user-provider.tsx
 'use client';
 
-import { RoleEnum, User } from '@/lib/definitions/user';
-import { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
+import { RoleEnum, User } from '@/lib/definitions/user';
 
 const UserContext = createContext<User | null>(null);
 

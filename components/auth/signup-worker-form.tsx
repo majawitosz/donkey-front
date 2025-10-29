@@ -72,7 +72,7 @@ export default function SignUpWorkerForm() {
 	});
 	async function onSubmit(values: z.infer<typeof formSchema>) {
 		const response = await fetch(
-			`${process.env.NEXT_PUBLIC_API_URL}/register`,
+			`${process.env.NEXT_PUBLIC_API_URL}/accounts/register`,
 			{
 				method: 'POST',
 				headers: {

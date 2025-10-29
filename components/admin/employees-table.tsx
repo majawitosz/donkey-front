@@ -35,21 +35,10 @@ import {
 	TableHeader,
 	TableRow,
 } from '@/components/ui/table';
+import type { components } from '@/lib/types/openapi';
+import { Spinner } from '@/components/ui/spinner';
 
-interface Employee {
-	id: number;
-	email: string;
-	first_name: string;
-	last_name: string;
-	role: string;
-	is_active: boolean;
-	is_staff: boolean;
-	created_at: string;
-	position: number;
-	position_name: string;
-	experience_years: number;
-	notes: string;
-}
+type Employee = components['schemas']['UserList'];
 
 export const columns: ColumnDef<Employee>[] = [
 	{
@@ -158,7 +147,7 @@ export default function EmployeesTable() {
 		async (searchTerm?: string, isInitial = false) => {
 			if (isInitial) setLoading(true);
 			try {
-				const data = await fetchEmployees(searchTerm);
+				const data: Employee[] = await fetchEmployees(searchTerm);
 				setEmployees(data);
 			} catch (error) {
 				console.error('Error fetching employees:', error);
@@ -198,7 +187,11 @@ export default function EmployeesTable() {
 	});
 
 	if (loading) {
-		return <div>Loading...</div>;
+		return (
+			<div className='flex items-center gap-8 justify-center min-h-svh'>
+				<Spinner className='size-8' />
+			</div>
+		);
 	}
 
 	return (

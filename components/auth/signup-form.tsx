@@ -78,7 +78,7 @@ export default function SignUpForm() {
 
 	async function onSubmit(values: z.infer<typeof formSchema>) {
 		const response = await fetch(
-			`${process.env.NEXT_PUBLIC_API_URL}/register-company`,
+			`${process.env.NEXT_PUBLIC_API_URL}/accounts/register-company`,
 			{
 				method: 'POST',
 				headers: {

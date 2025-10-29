@@ -51,8 +51,8 @@ const data = [
 		icon: IdCardLanyard,
 	},
 	{
-		title: 'Calendar',
-		url: '#',
+		title: 'Availability',
+		url: '/dashboard/admin/availability',
 		icon: Calendar,
 	},
 	{
