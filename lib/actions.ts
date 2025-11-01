@@ -334,3 +334,32 @@ export async function fetchAvailability(params?: {
 	// Zwracamy tylko tablicę results z odpowiedzi paginowanej
 	return response.results;
 }
+
+export async function submitDemand(
+	shifts: components['schemas']['DemandShiftIn'][]
+): Promise<components['schemas']['DemandCreateOut']> {
+	const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+	const fullUrl = `${baseUrl}/schedule/demand`;
+
+	// Generuj automatyczną nazwę: data + timestamp
+	const now = new Date();
+	const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
+	const timestamp = Date.now();
+	const generatedName = `Zapotrzebowanie_${dateStr}_${timestamp}`;
+
+	const endpoint = `${fullUrl}?name=${encodeURIComponent(generatedName)}`;
+
+	const response = await apiRequest<components['schemas']['DemandCreateOut']>(
+		endpoint,
+		{
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify(shifts),
+		},
+		'Failed to submit demand'
+	);
+
+	return response;
+}

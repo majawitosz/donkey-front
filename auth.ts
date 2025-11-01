@@ -25,6 +25,7 @@ async function refreshAccessToken(token: JWT): Promise<JWT> {
 
 	try {
 		console.log('🔄 Refreshing access token in auth.ts...');
+		console.log(token.refreshToken);
 		const response = await fetch(
 			`${process.env.NEXT_PUBLIC_API_URL}/accounts/token/refresh`,
 			{

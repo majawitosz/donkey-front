@@ -3,9 +3,7 @@
 
 import {
 	Calendar,
-	ChevronUp,
 	Home,
-	Inbox,
 	Search,
 	Settings,
 	User2,
@@ -14,6 +12,7 @@ import {
 	GalleryVerticalEnd,
 	AudioWaveform,
 	Command,
+	CalendarCog,
 } from 'lucide-react';
 import {
 	Sidebar,
@@ -27,15 +26,7 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 } from '@/components/ui/sidebar';
-import {
-	DropdownMenu,
-	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuTrigger,
-} from './dropdown-menu';
-import { signOutUser } from '@/lib/actions';
 import { useUser } from '@/providers/user-provider';
-import { RoleEnum } from '@/lib/definitions/user';
 import { TeamSwitcher } from './team-switcher';
 import { NavUser } from './nav-user';
 
@@ -56,9 +47,9 @@ const data = [
 		icon: Calendar,
 	},
 	{
-		title: 'Search',
-		url: '#',
-		icon: Search,
+		title: 'Demand',
+		url: '/dashboard/admin/demand',
+		icon: CalendarCog,
 	},
 	{
 		title: 'Settings',
