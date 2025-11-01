@@ -10,6 +10,7 @@ import {
 	addWeeks,
 	subWeeks,
 	addDays,
+	isSameWeek,
 } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { Button } from '../ui/button';
@@ -26,6 +27,7 @@ import {
 import { Input } from '../ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Switch } from '../ui/switch';
+import { Spinner } from '../ui/spinner';
 import { submitDemand } from '@/lib/actions';
 import type { components } from '@/lib/types/openapi';
 import { useAlert } from '@/providers/alert-provider';
@@ -103,6 +105,12 @@ export default function DemandForm() {
 			startOfWeek(new Date(), { locale: pl, weekStartsOn: 1 })
 		);
 	};
+
+	// Sprawdź czy aktualnie wyświetlany tydzień to obecny tydzień
+	const isCurrentWeek = isSameWeek(currentWeekStart, new Date(), {
+		locale: pl,
+		weekStartsOn: 1,
+	});
 
 	const addShift = (dayIndex: number) => {
 		setDayShifts((prev) => {
@@ -242,10 +250,10 @@ export default function DemandForm() {
 						<div className='flex justify-center mb-4'>
 							<Button
 								type='button'
-								variant='outline'
+								variant={isCurrentWeek ? 'outline' : 'default'}
 								size='sm'
 								onClick={handleCurrentWeek}
-								className=''>
+								disabled={isCurrentWeek}>
 								Obecny tydzień
 							</Button>
 						</div>
@@ -432,6 +440,7 @@ export default function DemandForm() {
 
 				<Field orientation='horizontal'>
 					<Button type='submit' disabled={isSubmitting}>
+						{isSubmitting && <Spinner className='mr-2' />}
 						{isSubmitting
 							? 'Zapisywanie...'
 							: 'Zapisz zapotrzebowanie'}
