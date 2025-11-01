@@ -336,30 +336,114 @@ export async function fetchAvailability(params?: {
 }
 
 export async function submitDemand(
-	shifts: components['schemas']['DemandShiftIn'][]
-): Promise<components['schemas']['DemandCreateOut']> {
+	shiftsPerDay: Array<{
+		weekday: number;
+		shifts: Array<{
+			timeFrom: string;
+			timeTo: string;
+			experienced: boolean;
+			amount: number;
+		}>;
+	}>
+): Promise<components['schemas']['DefaultDemandOut']> {
 	const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
-	const fullUrl = `${baseUrl}/schedule/demand`;
+	const endpoint = `${baseUrl}/schedule/demand/default/bulk`;
 
-	// Generuj automatyczną nazwę: data + timestamp
-	const now = new Date();
-	const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD
-	const timestamp = Date.now();
-	const generatedName = `Zapotrzebowanie_${dateStr}_${timestamp}`;
+	// Pobierz company_name z sesji
+	const session = await auth();
+	const location = session?.user?.company_name || null;
 
-	const endpoint = `${fullUrl}?name=${encodeURIComponent(generatedName)}`;
+	// Przekształć dane do formatu API
+	const payload: components['schemas']['DefaultDemandBulkIn'] = {
+		location: location,
+		defaults: shiftsPerDay.map((day) => ({
+			weekday: day.weekday,
+			items: day.shifts.map((shift) => ({
+				start: shift.timeFrom,
+				end: shift.timeTo,
+				demand: shift.amount,
+				needs_experienced: shift.experienced,
+			})),
+		})),
+	};
 
-	const response = await apiRequest<components['schemas']['DemandCreateOut']>(
+	const response = await apiRequest<
+		components['schemas']['DefaultDemandOut']
+	>(
 		endpoint,
 		{
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
 			},
-			body: JSON.stringify(shifts),
+			body: JSON.stringify(payload),
 		},
 		'Failed to submit demand'
 	);
 
+	return response;
+}
+
+export async function fetchDefaultDemand(): Promise<
+	components['schemas']['DefaultDemandOut']
+> {
+	const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+	const fullUrl = `${baseUrl}/schedule/demand/default`;
+
+	// Pobierz company_name z sesji
+	const session = await auth();
+	const location = session?.user?.company_name || '';
+
+	// Dodaj parametry query
+	const url = new URL(fullUrl);
+	url.searchParams.set('location', location);
+	// weekday nie podajemy - chcemy wszystkie dni tygodnia
+
+	const response = await apiRequest<
+		components['schemas']['DefaultDemandOut']
+	>(
+		url,
+		{
+			method: 'GET',
+		},
+		'Failed to fetch default demand'
+	);
+
+	return response;
+}
+
+export async function generateSchedule(
+	dateFrom: string,
+	dateTo: string
+): Promise<components['schemas']['GenerateResultOut']> {
+	const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+	const endpoint = `${baseUrl}/schedule/generate-range`;
+
+	// Pobierz company_name z sesji
+	const session = await auth();
+	const location = session?.user?.company_name || null;
+
+	const payload: components['schemas']['GenerateRangeIn'] = {
+		date_from: dateFrom,
+		date_to: dateTo,
+		location: location,
+		persist: true,
+		force: false,
+		items: null, // Użyj domyślnego zapotrzebowania
+	};
+
+	const response = await apiRequest<
+		components['schemas']['GenerateResultOut']
+	>(
+		endpoint,
+		{
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify(payload),
+		},
+		'Failed to generate schedule'
+	);
 	return response;
 }

@@ -1,7 +1,7 @@
 /** @format */
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 import {
 	format,
@@ -28,7 +28,7 @@ import { Input } from '../ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Switch } from '../ui/switch';
 import { Spinner } from '../ui/spinner';
-import { submitDemand } from '@/lib/actions';
+import { submitDemand, fetchDefaultDemand } from '@/lib/actions';
 import type { components } from '@/lib/types/openapi';
 import { useAlert } from '@/providers/alert-provider';
 
@@ -55,8 +55,10 @@ const DAYS_OF_WEEK = [
 	'Niedziela',
 ];
 
+let shiftIdCounter = 0;
+
 const createEmptyShift = (): Shift => ({
-	id: Math.random().toString(36).substr(2, 9),
+	id: `shift-${++shiftIdCounter}`,
 	timeFrom: '10:00',
 	timeTo: '18:00',
 	experienced: false,
@@ -66,6 +68,7 @@ const createEmptyShift = (): Shift => ({
 export default function DemandForm() {
 	const { showAlert } = useAlert();
 	const [isSubmitting, setIsSubmitting] = useState(false);
+	const [isLoading, setIsLoading] = useState(true);
 	const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() =>
 		startOfWeek(new Date(), { locale: pl, weekStartsOn: 1 })
 	);
@@ -111,6 +114,59 @@ export default function DemandForm() {
 		locale: pl,
 		weekStartsOn: 1,
 	});
+
+	// Załaduj domyślne zapotrzebowanie przy montowaniu komponentu
+	useEffect(() => {
+		const loadDefaultDemand = async () => {
+			try {
+				setIsLoading(true);
+				const defaultDemand = await fetchDefaultDemand();
+
+				// Przekształć dane z API do formatu formularza
+				if (
+					defaultDemand.defaults &&
+					defaultDemand.defaults.length > 0
+				) {
+					const loadedShifts: DayShifts[] = DAYS_OF_WEEK.map(
+						(dayName, dayIndex) => {
+							// Znajdź dane dla tego dnia tygodnia
+							const dayData = defaultDemand.defaults.find(
+								(d) => d.weekday === dayIndex
+							);
+
+							if (dayData && dayData.items.length > 0) {
+								return {
+									day: dayName,
+									shifts: dayData.items.map((item) => ({
+										id: `shift-${++shiftIdCounter}`,
+										timeFrom: item.start,
+										timeTo: item.end,
+										experienced: item.needs_experienced,
+										amount: item.demand,
+									})),
+								};
+							}
+
+							// Jeśli brak danych dla tego dnia, użyj pustej zmiany
+							return {
+								day: dayName,
+								shifts: [createEmptyShift()],
+							};
+						}
+					);
+
+					setDayShifts(loadedShifts);
+				}
+			} catch (error) {
+				console.log('ℹ️ No default demand found, using empty form');
+				// Nie pokazujemy alertu - to normalna sytuacja dla nowego użytkownika
+			} finally {
+				setIsLoading(false);
+			}
+		};
+
+		loadDefaultDemand();
+	}, []);
 
 	const addShift = (dayIndex: number) => {
 		setDayShifts((prev) => {
@@ -159,34 +215,26 @@ export default function DemandForm() {
 		setIsSubmitting(true);
 
 		try {
-			// Przekształć dane formularza do formatu API
-			const demandShifts: components['schemas']['DemandShiftIn'][] = [];
+			// Przekształć dane formularza do nowego formatu API
+			const shiftsPerDay = dayShifts.map((dayData, dayIndex) => ({
+				weekday: dayIndex, // 0 = Poniedziałek, 6 = Niedziela
+				shifts: dayData.shifts.map((shift) => ({
+					timeFrom: shift.timeFrom,
+					timeTo: shift.timeTo,
+					experienced: shift.experienced,
+					amount: shift.amount,
+				})),
+			}));
 
-			dayShifts.forEach((dayData, dayIndex) => {
-				const date = weekDays[dayIndex].date;
-				const dateStr = format(date, 'yyyy-MM-dd');
-
-				dayData.shifts.forEach((shift) => {
-					demandShifts.push({
-						date: dateStr,
-						location: '', // pusty string jak w wymaganiach
-						start: shift.timeFrom,
-						end: shift.timeTo,
-						demand: shift.amount,
-						needs_experienced: shift.experienced,
-					});
-				});
-			});
-
-			const result = await submitDemand(demandShifts);
+			const result = await submitDemand(shiftsPerDay);
 
 			showAlert({
 				title: 'Sukces!',
-				description: `Zapotrzebowanie zostało zapisane. ID: ${result.demand_id}`,
+				description: `Domyślne zapotrzebowanie zostało zapisane.`,
 				variant: 'success',
 			});
 
-			console.log('✅ Demand created:', result);
+			console.log('✅ Default demand saved:', result);
 		} catch (error) {
 			console.error('❌ Error submitting demand:', error);
 			showAlert({
@@ -201,6 +249,17 @@ export default function DemandForm() {
 			setIsSubmitting(false);
 		}
 	};
+
+	if (isLoading) {
+		return (
+			<div className='flex items-center justify-center py-12'>
+				<Spinner className='mr-2 h-8 w-8' />
+				<p className='text-muted-foreground'>
+					Ładowanie zapotrzebowania...
+				</p>
+			</div>
+		);
+	}
 
 	return (
 		<form onSubmit={handleSubmit}>
@@ -219,7 +278,8 @@ export default function DemandForm() {
 								type='button'
 								variant='outline'
 								size='icon'
-								onClick={handlePreviousWeek}>
+								onClick={handlePreviousWeek}
+								disabled={isCurrentWeek}>
 								<ChevronLeft className='h-4 w-4' />
 							</Button>
 							<div className='flex flex-col items-center gap-1'>

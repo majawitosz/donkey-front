@@ -13,6 +13,7 @@ import {
 	AudioWaveform,
 	Command,
 	CalendarCog,
+	CalendarPlus,
 } from 'lucide-react';
 import {
 	Sidebar,
@@ -52,9 +53,9 @@ const data = [
 		icon: CalendarCog,
 	},
 	{
-		title: 'Settings',
-		url: '#',
-		icon: Settings,
+		title: 'Schedule',
+		url: '/dashboard/admin/schedule',
+		icon: CalendarPlus,
 	},
 ];
 const teams = [
