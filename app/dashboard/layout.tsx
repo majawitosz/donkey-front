@@ -9,6 +9,7 @@ import { AppSidebar } from '@/components/ui/app-sidebar';
 import { auth } from '@/auth';
 import { UserProvider } from '@/providers/user-provider';
 import { SiteHeader } from '@/components/ui/site-header';
+import { SessionMonitor } from '@/providers/session-monitor';
 
 export default async function LayoutDashboard({
 	children,
@@ -18,6 +19,7 @@ export default async function LayoutDashboard({
 	const session = await auth();
 	return (
 		<UserProvider user={session?.user ?? null}>
+			<SessionMonitor />
 			<SidebarProvider
 				style={
 					{

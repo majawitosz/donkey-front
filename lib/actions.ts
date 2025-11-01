@@ -5,6 +5,7 @@
 import { signIn, signOut, auth } from '@/auth';
 import { AuthError } from 'next-auth';
 import type { components } from '@/lib/types/openapi';
+import { decodeJwtPayload } from './token';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL + '/accounts/';
 
@@ -34,33 +35,127 @@ function resolveApiUrl(endpoint: string | URL): string {
 	return new URL(endpoint, API_BASE_URL).toString();
 }
 
+// Funkcja odświeżająca token
+async function refreshToken(
+	refreshToken: string
+): Promise<{ access: string; refresh?: string } | null> {
+	try {
+		console.log('🔄 Attempting to refresh access token...');
+		const response = await fetch(
+			`${process.env.NEXT_PUBLIC_API_URL}/accounts/token/refresh`,
+			{
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ refresh: refreshToken }),
+			}
+		);
+
+		if (!response.ok) {
+			console.error(
+				'❌ Failed to refresh token:',
+				response.status,
+				response.statusText
+			);
+			const errorText = await response.text();
+			console.error('Response body:', errorText);
+			return null;
+		}
+
+		const data = await response.json();
+		console.log('✅ Token refreshed successfully');
+		return data;
+	} catch (error) {
+		console.error('❌ Error during token refresh:', error);
+		return null;
+	}
+}
+
 async function getAccessToken(): Promise<string> {
 	const session = await auth();
 	if (!session?.user?.accessToken) {
-		throw new Error('No access token');
+		throw new Error('No access token in session');
 	}
+
+	// Sprawdź czy token nie wygasł
+	try {
+		const decoded = decodeJwtPayload(session.user.accessToken);
+		const expiresAt = decoded.exp * 1000;
+		const now = Date.now();
+		const timeUntilExpiry = expiresAt - now;
+
+		console.log(
+			`🔑 Token expires in ${Math.round(timeUntilExpiry / 1000)}s`
+		);
+
+		// Jeśli token wygasa za mniej niż 5 minut, odśwież go
+		if (timeUntilExpiry < 5 * 60 * 1000) {
+			console.log('⚠️ Token expires soon, refreshing...');
+			if (session.user.refreshToken) {
+				const newTokens = await refreshToken(session.user.refreshToken);
+				if (newTokens) {
+					// Zaktualizuj sesję - to powinno wywołać jwt callback
+					// Ale nie mamy bezpośredniego dostępu do update w server actions
+					console.log(
+						'✅ Got new tokens, but cannot update session from server action'
+					);
+					return newTokens.access;
+				}
+			}
+		}
+	} catch (error) {
+		console.error('❌ Error decoding token:', error);
+	}
+
 	return session.user.accessToken;
 }
 
 async function authorizedFetch(
 	endpoint: string | URL,
-	init: RequestInit = {}
+	init: RequestInit = {},
+	retryCount = 0
 ): Promise<Response> {
-	const accessToken = await getAccessToken();
+	const session = await auth();
+	if (!session?.user?.accessToken) {
+		throw new Error('No session or access token');
+	}
+
 	const headers = new Headers(init.headers);
 
 	if (!headers.has('Authorization')) {
-		headers.set('Authorization', `Bearer ${accessToken}`);
+		headers.set('Authorization', `Bearer ${session.user.accessToken}`);
 	}
 
 	if (init.body && !headers.has('Content-Type')) {
 		headers.set('Content-Type', 'application/json');
 	}
 
-	return fetch(resolveApiUrl(endpoint), {
+	const response = await fetch(resolveApiUrl(endpoint), {
 		...init,
 		headers,
 	});
+	if (response.status === 401 && retryCount === 0) {
+		console.log('🔄 Got 401, attempting to refresh token and retry...');
+
+		if (session.user.refreshToken) {
+			const newTokens = await refreshToken(session.user.refreshToken);
+
+			if (newTokens) {
+				console.log('✅ Token refreshed, retrying request...');
+				headers.set('Authorization', `Bearer ${newTokens.access}`);
+
+				return fetch(resolveApiUrl(endpoint), {
+					...init,
+					headers,
+				});
+			} else {
+				console.error('❌ Failed to refresh token, session expired');
+			}
+		} else {
+			console.error('❌ No refresh token available');
+		}
+	}
+
+	return response;
 }
 
 async function apiRequest<T>(
@@ -78,7 +173,9 @@ async function apiRequest<T>(
 		} catch (error) {
 			console.error('Could not read response body', error);
 		}
-		throw new Error(errorMessage);
+		throw new Error(
+			`${errorMessage}: ${response.status} ${response.statusText}`
+		);
 	}
 
 	if (response.status === 204) {

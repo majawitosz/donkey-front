@@ -40,3 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 /lib/types/openapi.d.ts
+
+# docs
+TOKEN_REFRESH_DOCS.md

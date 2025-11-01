@@ -16,6 +16,7 @@ type RefreshResponse = {
 
 async function refreshAccessToken(token: JWT): Promise<JWT> {
 	if (!token.refreshToken) {
+		console.error('❌ No refresh token available');
 		return {
 			...token,
 			error: 'MissingRefreshToken',
@@ -23,6 +24,7 @@ async function refreshAccessToken(token: JWT): Promise<JWT> {
 	}
 
 	try {
+		console.log('🔄 Refreshing access token in auth.ts...');
 		const response = await fetch(
 			`${process.env.NEXT_PUBLIC_API_URL}/accounts/token/refresh`,
 			{
@@ -33,7 +35,12 @@ async function refreshAccessToken(token: JWT): Promise<JWT> {
 		);
 
 		if (!response.ok) {
-			console.error('Failed to refresh access token', response.status);
+			const errorText = await response.text();
+			console.error(
+				'❌ Failed to refresh access token',
+				response.status,
+				errorText
+			);
 			return {
 				...token,
 				error: 'RefreshAccessTokenError',
@@ -41,16 +48,38 @@ async function refreshAccessToken(token: JWT): Promise<JWT> {
 		}
 
 		const data = (await response.json()) as RefreshResponse;
-		const decoded = decodeJwtPayload(data.access);
-		return {
-			...token,
-			accessToken: data.access,
-			accessTokenExpires: decoded.exp * 1000,
-			refreshToken: data.refresh ?? token.refreshToken,
-			error: undefined,
-		};
+
+		if (!data.access) {
+			console.error('❌ No access token in refresh response');
+			return {
+				...token,
+				error: 'RefreshAccessTokenError',
+			};
+		}
+
+		try {
+			const decoded = decodeJwtPayload(data.access);
+			console.log(
+				'✅ Token refreshed successfully, expires at:',
+				new Date(decoded.exp * 1000).toISOString()
+			);
+
+			return {
+				...token,
+				accessToken: data.access,
+				accessTokenExpires: decoded.exp * 1000,
+				refreshToken: data.refresh ?? token.refreshToken,
+				error: undefined,
+			};
+		} catch (decodeError) {
+			console.error('❌ Failed to decode new access token', decodeError);
+			return {
+				...token,
+				error: 'RefreshAccessTokenError',
+			};
+		}
 	} catch (error) {
-		console.error('Error refreshing access token', error);
+		console.error('❌ Error refreshing access token', error);
 		return {
 			...token,
 			error: 'RefreshAccessTokenError',
@@ -128,7 +157,9 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
 				accessTokenExpires?: number;
 			};
 		}) {
+			// Przy pierwszym logowaniu
 			if (user) {
+				console.log('👤 User signed in, initializing token');
 				const typedUser = user as AdapterUser & User;
 				token.id = Number(typedUser.id);
 				token.email = typedUser.email;
@@ -145,25 +176,35 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
 
 				try {
 					const decoded = decodeJwtPayload(token.accessToken);
-					console.log('token', token.accessToken);
 					token.accessTokenExpires = decoded.exp * 1000;
+					console.log(
+						'✅ Initial token expires at:',
+						new Date(decoded.exp * 1000).toISOString()
+					);
 				} catch (error) {
 					console.error(
-						'Failed to decode access token during sign in',
+						'❌ Failed to decode access token during sign in',
 						error
 					);
 				}
+				return token;
 			}
 
+			// Przy update sesji
 			if (trigger === 'update' && session) {
+				console.log('🔄 Session update triggered');
 				if (session.accessToken) {
 					token.accessToken = session.accessToken;
 					try {
 						const decoded = decodeJwtPayload(token.accessToken);
 						token.accessTokenExpires = decoded.exp * 1000;
+						console.log(
+							'✅ Updated token expires at:',
+							new Date(decoded.exp * 1000).toISOString()
+						);
 					} catch (error) {
 						console.error(
-							'Failed to decode updated access token',
+							'❌ Failed to decode updated access token',
 							error
 						);
 						token.accessTokenExpires = undefined;
@@ -175,32 +216,63 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
 				if (session.accessTokenExpires) {
 					token.accessTokenExpires = session.accessTokenExpires;
 				}
-			}
-
-			if (!token.accessToken) {
 				return token;
 			}
 
+			// Sprawdź czy mamy access token
+			if (!token.accessToken) {
+				console.error('❌ No access token in JWT callback');
+				return token;
+			}
+
+			// Sprawdź czy mamy czas wygaśnięcia
 			if (!token.accessTokenExpires) {
 				try {
 					const decoded = decodeJwtPayload(token.accessToken);
 					token.accessTokenExpires = decoded.exp * 1000;
+					console.log(
+						'⚠️ Restored token expiry:',
+						new Date(decoded.exp * 1000).toISOString()
+					);
 				} catch (error) {
 					console.error(
-						'Failed to decode existing access token',
+						'❌ Failed to decode existing access token',
 						error
 					);
 					return token;
 				}
 			}
 
-			if (Date.now() < (token.accessTokenExpires ?? 0) - 60_000) {
+			// Sprawdź czy token jeszcze jest ważny (z 1 minutowym buforem)
+			const now = Date.now();
+			const timeUntilExpiry = token.accessTokenExpires - now;
+			const bufferTime = 60_000; // 1 minuta
+
+			if (timeUntilExpiry > bufferTime) {
+				console.log(
+					`✅ Token still valid for ${Math.round(
+						timeUntilExpiry / 1000
+					)}s`
+				);
 				return token;
 			}
 
+			console.log(
+				`⚠️ Token expires soon (${Math.round(
+					timeUntilExpiry / 1000
+				)}s), refreshing...`
+			);
 			return refreshAccessToken(token);
 		},
 		async session({ session, token }: { session: Session; token: JWT }) {
+			// Jeśli mamy błąd w tokenie, wyloguj użytkownika
+			if (token.error) {
+				console.error('❌ Token error in session:', token.error);
+				session.error = token.error;
+				// Opcjonalnie: wyloguj użytkownika automatycznie
+				// Ale to musi być zrobione po stronie klienta
+			}
+
 			session.user.id = token.id;
 			session.user.email = token.email;
 			session.user.full_name = token.full_name;
