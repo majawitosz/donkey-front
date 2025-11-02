@@ -429,7 +429,7 @@ export async function generateSchedule(
 		location: location,
 		persist: true,
 		force: false,
-		items: null, // Użyj domyślnego zapotrzebowania
+		items: null,
 	};
 
 	const response = await apiRequest<
@@ -444,6 +444,23 @@ export async function generateSchedule(
 			body: JSON.stringify(payload),
 		},
 		'Failed to generate schedule'
+	);
+
+	console.dir(response, { depth: null });
+	return response;
+}
+
+// Funkcja do pobierania szczegółów pracownika
+export async function fetchEmployeeDetails(
+	employeeId: string
+): Promise<UserDetail> {
+	const endpoint = `/api/accounts/employees/${employeeId}/`;
+	const response = await apiRequest<UserDetail>(
+		endpoint,
+		{
+			method: 'GET',
+		},
+		'Failed to fetch employee details'
 	);
 	return response;
 }
