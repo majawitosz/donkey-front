@@ -4,35 +4,110 @@
 
 import { signIn, signOut, auth } from '@/auth';
 import { AuthError } from 'next-auth';
+import { redirect } from 'next/navigation';
 import type { components } from '@/lib/types/openapi';
 import { decodeJwtPayload } from './token';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL + '/accounts/';
+const API_ROOT_URL = process.env.NEXT_PUBLIC_API_URL
+        ? process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '')
+        : undefined;
+const ACCOUNTS_BASE_URL = API_ROOT_URL ? `${API_ROOT_URL}/accounts/` : undefined;
 
 type Position = components['schemas']['Position'];
 type UserDetail = components['schemas']['UserList'];
 type AvailabilityOut = components['schemas']['AvailabilityOut'];
 type CompanyCodeResponse = components['schemas']['CompanyCode'];
+type CalendarEventOut = components['schemas']['CalendarEventOut'];
+type MedicalEventOut = components['schemas']['MedicalEventOut'];
+type ExternalCalendarOut = components['schemas']['ExternalCalendarOut'];
+
+export interface CalendarEvent {
+        id: string;
+        title: string;
+        description?: string | null;
+        start: string;
+        end?: string | null;
+        type?: string | null;
+        category?: string | null;
+        location?: string | null;
+        all_day?: boolean | null;
+        allDay?: boolean | null;
+        status?: string | null;
+        exam_type?: string | null;
+        notes?: string | null;
+        color?: string | null;
+        external_calendar?: string | null;
+        externalCalendar?: string | null;
+        original_category?: string | null;
+        employee_id?: string | null;
+        created_at?: string | null;
+        updated_at?: string | null;
+        [key: string]: unknown;
+}
+
+export interface CalendarIntegration {
+        id: string;
+        provider: string;
+        connected: boolean;
+        last_sync_at?: string | null;
+        last_synced_at?: string | null;
+        status?: string | null;
+        sync_error?: string | null;
+        primary_calendar?: string | null;
+        name?: string | null;
+        provider_code?: string | null;
+        active?: boolean | null;
+        external_id?: string | null;
+        employee_id?: string | null;
+        settings?: Record<string, unknown> | null;
+        sync_token?: string | null;
+        [key: string]: unknown;
+}
+
+export interface CalendarOverview {
+        events: CalendarEvent[];
+        integrations: CalendarIntegration[];
+}
 
 // Typ dla odpowiedzi z paginacją
 type PaginatedResponse<T> = {
-	count: number;
-	next: string | null;
-	previous: string | null;
+        count: number;
+        next: string | null;
+        previous: string | null;
 	results: T[];
 };
 
 function resolveApiUrl(endpoint: string | URL): string {
-	if (endpoint instanceof URL) {
-		return endpoint.toString();
-	}
-	if (/^https?:\/\//i.test(endpoint)) {
-		return endpoint;
-	}
-	if (!API_BASE_URL) {
-		throw new Error('API base URL is not defined');
-	}
-	return new URL(endpoint, API_BASE_URL).toString();
+        if (endpoint instanceof URL) {
+                return endpoint.toString();
+        }
+        if (/^https?:\/\//i.test(endpoint)) {
+                return endpoint;
+        }
+        if (!API_ROOT_URL) {
+                throw new Error('API base URL is not defined');
+        }
+
+        const normalized = endpoint.replace(/^\/+/, '');
+
+        if (normalized.startsWith('api/')) {
+                const rootWithoutApi = API_ROOT_URL.replace(/\/api$/, '');
+                return `${rootWithoutApi}/${normalized}`;
+        }
+
+        if (
+                normalized.startsWith('schedule/') ||
+                normalized.startsWith('calendar/') ||
+                normalized.startsWith('accounts/')
+        ) {
+                return `${API_ROOT_URL}/${normalized}`;
+        }
+
+        if (!ACCOUNTS_BASE_URL) {
+                throw new Error('Accounts API base URL is not defined');
+        }
+
+        return new URL(normalized, ACCOUNTS_BASE_URL).toString();
 }
 
 // Funkcja odświeżająca token
@@ -159,9 +234,9 @@ async function authorizedFetch(
 }
 
 async function apiRequest<T>(
-	endpoint: string | URL,
-	init: RequestInit,
-	errorMessage: string
+        endpoint: string | URL,
+        init: RequestInit,
+        errorMessage: string
 ): Promise<T> {
 	const response = await authorizedFetch(endpoint, init);
 
@@ -182,7 +257,207 @@ async function apiRequest<T>(
 		return undefined as T;
 	}
 
-	return response.json() as Promise<T>;
+        return response.json() as Promise<T>;
+}
+
+export async function fetchCalendarOverview(): Promise<CalendarOverview> {
+        if (!API_ROOT_URL) {
+                throw new Error('NEXT_PUBLIC_API_URL is not defined');
+        }
+
+        const eventsUrl = new URL(`${API_ROOT_URL}/calendar/events`);
+        eventsUrl.searchParams.set('limit', '200');
+		// Ensure category is present as a string (FastAPI will validate type)
+		eventsUrl.searchParams.set('category', '');
+
+	// Provide safe defaults for query parameters so FastAPI doesn't reject them
+	// if the backend expects certain typed query params. Use ISO strings for
+	// datetimes and string/boolean values as appropriate.
+	const now = new Date();
+	const defaultStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 days ago
+	const defaultEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days ahead
+
+	// Strings: employee_id and status (empty string is a valid string)
+	eventsUrl.searchParams.set('employee_id', '');
+	eventsUrl.searchParams.set('status', '');
+	// Datetimes: send ISO strings
+	eventsUrl.searchParams.set('start_from', defaultStart.toISOString());
+	eventsUrl.searchParams.set('end_to', defaultEnd.toISOString());
+
+	const medicalUrl = new URL(`${API_ROOT_URL}/calendar/medical`);
+	medicalUrl.searchParams.set('limit', '200');
+	// Medical events use the same default date range and optional string filters
+	medicalUrl.searchParams.set('employee_id', '');
+	medicalUrl.searchParams.set('status', '');
+	medicalUrl.searchParams.set('start_from', defaultStart.toISOString());
+	medicalUrl.searchParams.set('end_to', defaultEnd.toISOString());
+
+	const integrationsUrl = new URL(`${API_ROOT_URL}/calendar/sources`);
+	integrationsUrl.searchParams.set('limit', '100');
+	// External calendars: provider should be a string, active a boolean-like value
+	integrationsUrl.searchParams.set('provider', '');
+	integrationsUrl.searchParams.set('active', String(true));
+
+        const [eventsResult, medicalResult, integrationsResult] = await Promise.allSettled([
+                apiRequest<CalendarEventOut[]>(eventsUrl, { method: 'GET' }, 'Failed to fetch calendar events'),
+                apiRequest<MedicalEventOut[]>(
+                        medicalUrl,
+                        { method: 'GET' },
+                        'Failed to fetch medical calendar events'
+                ),
+                apiRequest<ExternalCalendarOut[]>(
+                        integrationsUrl,
+                        { method: 'GET' },
+                        'Failed to fetch external calendars'
+                ),
+        ]);
+
+        const events: CalendarEvent[] = [];
+
+        if (eventsResult.status === 'fulfilled') {
+                events.push(...eventsResult.value.map(mapApiCalendarEvent));
+        } else {
+                console.error(eventsResult.reason);
+        }
+
+        if (medicalResult.status === 'fulfilled') {
+                events.push(...medicalResult.value.map(mapMedicalEvent));
+        } else {
+                console.error(medicalResult.reason);
+        }
+
+        const integrations: CalendarIntegration[] = [];
+
+        if (integrationsResult.status === 'fulfilled') {
+                integrations.push(...integrationsResult.value.map(mapExternalCalendar));
+        } else {
+                console.error(integrationsResult.reason);
+        }
+
+        return {
+                events,
+                integrations,
+        };
+}
+
+function normalizeEventCategory(category: string | null | undefined): string {
+        if (!category) {
+                return 'schedule';
+        }
+
+        const normalized = category.toLowerCase();
+
+        if (normalized === 'leave' || normalized === 'vacation') {
+                return 'vacation';
+        }
+        if (normalized === 'training') {
+                return 'training';
+        }
+        if (normalized === 'medical') {
+                return 'medical';
+        }
+
+        return 'schedule';
+}
+
+function mapApiCalendarEvent(event: CalendarEventOut): CalendarEvent {
+        const category = normalizeEventCategory(event.category);
+        const end = event.end_at ?? event.start_at;
+
+	const normalized: CalendarEvent = {
+				id: String(event.id),
+				title: event.title ?? '',
+		description: event.description ?? null,
+		start: event.start_at ?? '',
+		end,
+		type: category,
+		category,
+		location: event.location ?? null,
+		color: event.color ?? null,
+		all_day: null,
+		allDay: null,
+	};
+
+        normalized.original_category = event.category ?? null;
+        normalized.employee_id = event.employee_id ?? null;
+        normalized.created_at = event.created_at ?? null;
+        normalized.updated_at = event.updated_at ?? null;
+
+        return normalized;
+}
+
+function mapMedicalEvent(event: MedicalEventOut): CalendarEvent {
+        const end = event.end_at ?? event.start_at;
+
+	const normalized: CalendarEvent = {
+				id: String(event.id),
+				title: event.title ?? '',
+		description: event.description ?? event.notes ?? null,
+		start: event.start_at ?? '',
+		end,
+		type: 'medical',
+		category: 'medical',
+		location: event.location ?? null,
+		status: event.status ?? null,
+		exam_type: event.exam_type ?? null,
+		notes: event.notes ?? null,
+		all_day: null,
+		allDay: null,
+	};
+
+        normalized.employee_id = event.employee_id ?? null;
+        normalized.created_at = event.created_at ?? null;
+        normalized.updated_at = event.updated_at ?? null;
+
+        return normalized;
+}
+
+function mapExternalCalendar(integration: ExternalCalendarOut): CalendarIntegration {
+        const providerLabel = formatProviderName(integration.provider);
+        const connectionName = integration.name?.trim() || providerLabel;
+        const lastSynced = integration.last_synced_at ?? null;
+        const isActive = integration.active ?? true;
+
+        const normalized: CalendarIntegration = {
+                id: String(integration.id),
+                provider: connectionName,
+                name: integration.name ?? connectionName,
+                provider_code: integration.provider ?? null,
+                connected: Boolean(isActive),
+                active: integration.active ?? null,
+                last_sync_at: lastSynced,
+                last_synced_at: lastSynced,
+                primary_calendar: integration.external_id ?? null,
+                external_id: integration.external_id ?? null,
+                status: isActive ? 'active' : 'inactive',
+        };
+
+        normalized.employee_id = integration.employee_id ?? null;
+        normalized.settings = integration.settings ?? null;
+        normalized.sync_token = integration.sync_token ?? null;
+
+        return normalized;
+}
+
+function formatProviderName(provider?: string | null): string {
+        if (!provider) {
+                return 'Inny kalendarz';
+        }
+
+        const normalized = provider.toLowerCase();
+
+        switch (normalized) {
+                case 'google':
+                        return 'Google Calendar';
+                case 'outlook':
+                        return 'Microsoft Outlook';
+                case 'ics':
+                        return 'Plik ICS';
+                case 'other':
+                        return 'Inny kalendarz';
+                default:
+                        return provider.charAt(0).toUpperCase() + provider.slice(1);
+        }
 }
 
 export async function authenticate(
@@ -216,12 +491,15 @@ export async function signOutUser() {
 }
 
 export async function fetchEmployees(search?: string): Promise<UserDetail[]> {
-	const url = new URL('employees/', API_BASE_URL);
-	if (search) {
-		url.searchParams.set('search', search);
-	}
-	return apiRequest<UserDetail[]>(
-		url,
+        if (!ACCOUNTS_BASE_URL) {
+                throw new Error('API base URL is not defined');
+        }
+        const url = new URL('employees/', ACCOUNTS_BASE_URL);
+        if (search) {
+                url.searchParams.set('search', search);
+        }
+        return apiRequest<UserDetail[]>(
+                url,
 		{ method: 'GET' },
 		'Failed to fetch employees'
 	);
@@ -446,4 +724,71 @@ export async function generateSchedule(
 		'Failed to generate schedule'
 	);
 	return response;
+}
+
+export async function createCalendarEvent(formData: FormData) {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    const endpoint = `${baseUrl}/calendar/events`;
+
+    // Convert datetime-local to ISO string with timezone
+    const startAt = formData.get('start_at') as string;
+    const endAt = formData.get('end_at') as string;
+
+    const payload: Record<string, unknown> = {
+        title: String(formData.get('title') ?? ''),
+        description: (formData.get('description') as string) || null,
+        start_at: startAt ? new Date(startAt).toISOString() : null,
+        end_at: endAt ? new Date(endAt).toISOString() : null,
+        category: (formData.get('category') as string) || null,
+        employee_id: (formData.get('employee_id') as string) || null,
+        location: (formData.get('location') as string) || null,
+        color: (formData.get('color') as string) || null,
+    };
+
+    await apiRequest(
+        endpoint,
+        {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        },
+        'Failed to create calendar event'
+    );
+
+    // Redirect back to calendars page after successful creation
+    redirect('/dashboard/admin/calendars');
+}
+
+export async function createMedicalEvent(formData: FormData) {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    const endpoint = `${baseUrl}/calendar/medical`;
+
+    // Convert datetime-local to ISO string with timezone
+    const startAt = formData.get('start_at') as string;
+    const endAt = formData.get('end_at') as string;
+
+    const payload: Record<string, unknown> = {
+        title: String(formData.get('title') ?? ''),
+        description: (formData.get('description') as string) || null,
+        start_at: startAt ? new Date(startAt).toISOString() : null,
+        end_at: endAt ? new Date(endAt).toISOString() : null,
+        employee_id: (formData.get('employee_id') as string) || null,
+        location: (formData.get('location') as string) || null,
+        exam_type: (formData.get('exam_type') as string) || null,
+        status: (formData.get('status') as string) || null,
+        notes: (formData.get('notes') as string) || null,
+    };
+
+    await apiRequest(
+        endpoint,
+        {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        },
+        'Failed to create medical event'
+    );
+
+    // Redirect back to calendars page after successful creation
+    redirect('/dashboard/admin/calendars');
 }

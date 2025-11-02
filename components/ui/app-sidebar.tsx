@@ -12,8 +12,9 @@ import {
 	GalleryVerticalEnd,
 	AudioWaveform,
 	Command,
-	CalendarCog,
-	CalendarPlus,
+        CalendarCog,
+        CalendarPlus,
+        CalendarRange,
 } from 'lucide-react';
 import {
 	Sidebar,
@@ -52,11 +53,16 @@ const data = [
 		url: '/dashboard/admin/demand',
 		icon: CalendarCog,
 	},
-	{
-		title: 'Schedule',
-		url: '/dashboard/admin/schedule',
-		icon: CalendarPlus,
-	},
+        {
+                title: 'Schedule',
+                url: '/dashboard/admin/schedule',
+                icon: CalendarPlus,
+        },
+        {
+                title: 'Calendars',
+                url: '/dashboard/admin/calendars',
+                icon: CalendarRange,
+        },
 ];
 const teams = [
 	{
