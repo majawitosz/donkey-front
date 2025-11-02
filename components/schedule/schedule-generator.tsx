@@ -29,24 +29,39 @@ export default function ScheduleGenerator() {
 		weekStartsOn: 1,
 	});
 
-	const handlePreviousWeek = () => {
-		setCurrentWeekStart((prev) => subWeeks(prev, 1));
-		setGeneratedSchedule(null); // Wyczyść poprzedni grafik
-	};
+	// Automatycznie ładuj grafik przy montowaniu i zmianie tygodnia
+	React.useEffect(() => {
+		const loadSchedule = async () => {
+			setLoading(true);
+			try {
+				const dateFrom = format(currentWeekStart, 'yyyy-MM-dd');
+				const dateTo = format(currentWeekEnd, 'yyyy-MM-dd');
 
-	const handleNextWeek = () => {
-		setCurrentWeekStart((prev) => addWeeks(prev, 1));
-		setGeneratedSchedule(null); // Wyczyść poprzedni grafik
-	};
+				const result = await generateSchedule(dateFrom, dateTo);
 
-	const handleCurrentWeek = () => {
-		setCurrentWeekStart(
-			startOfWeek(new Date(), { locale: pl, weekStartsOn: 1 })
-		);
-		setGeneratedSchedule(null); // Wyczyść poprzedni grafik
-	};
+				setGeneratedSchedule(result);
+				console.log('✅ Schedule loaded:', result);
+			} catch (error) {
+				console.error('❌ Error loading schedule:', error);
+				showAlert({
+					title: 'Błąd',
+					description:
+						error instanceof Error
+							? error.message
+							: 'Nie udało się załadować grafiku',
+					variant: 'error',
+				});
+			} finally {
+				setLoading(false);
+			}
+		};
 
-	const handleGenerateSchedule = async () => {
+		loadSchedule();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [currentWeekStart]); // Reaguj tylko na zmianę tygodnia
+
+	// Funkcja do odświeżania grafiku (dla edycji)
+	const refreshSchedule = React.useCallback(async () => {
 		setLoading(true);
 		try {
 			const dateFrom = format(currentWeekStart, 'yyyy-MM-dd');
@@ -55,26 +70,26 @@ export default function ScheduleGenerator() {
 			const result = await generateSchedule(dateFrom, dateTo);
 
 			setGeneratedSchedule(result);
-			showAlert({
-				title: 'Sukces!',
-				description: `Wygenerowano grafik dla ${result.assignments.length} zmian.`,
-				variant: 'success',
-			});
-
-			console.log('✅ Schedule generated:', result);
+			console.log('✅ Schedule refreshed:', result);
 		} catch (error) {
-			console.error('❌ Error generating schedule:', error);
-			showAlert({
-				title: 'Błąd',
-				description:
-					error instanceof Error
-						? error.message
-						: 'Nie udało się wygenerować grafiku',
-				variant: 'error',
-			});
+			console.error('❌ Error refreshing schedule:', error);
 		} finally {
 			setLoading(false);
 		}
+	}, [currentWeekStart, currentWeekEnd]);
+
+	const handlePreviousWeek = () => {
+		setCurrentWeekStart((prev) => subWeeks(prev, 1));
+	};
+
+	const handleNextWeek = () => {
+		setCurrentWeekStart((prev) => addWeeks(prev, 1));
+	};
+
+	const handleCurrentWeek = () => {
+		setCurrentWeekStart(
+			startOfWeek(new Date(), { locale: pl, weekStartsOn: 1 })
+		);
 	};
 
 	return (
@@ -125,15 +140,6 @@ export default function ScheduleGenerator() {
 								disabled={loading}>
 								Obecny tydzień
 							</Button>
-							<Button
-								onClick={handleGenerateSchedule}
-								disabled={loading}>
-								{loading && (
-									<Spinner className='mr-2 h-4 w-4' />
-								)}
-								<Calendar className='mr-2 h-4 w-4' />
-								Generuj grafik
-							</Button>
 						</div>
 					</div>
 
@@ -141,23 +147,16 @@ export default function ScheduleGenerator() {
 						<div className='flex flex-col items-center justify-center py-12 gap-4'>
 							<Spinner className='h-8 w-8' />
 							<p className='text-muted-foreground'>
-								Generowanie grafiku...
+								Ładowanie grafiku...
 							</p>
 						</div>
 					) : generatedSchedule ? (
 						<WeeklyScheduleView
 							weekStart={currentWeekStart}
 							scheduleData={generatedSchedule}
+							onScheduleUpdate={refreshSchedule}
 						/>
-					) : (
-						<div className='flex flex-col items-center justify-center py-12 gap-4 text-muted-foreground'>
-							<Calendar className='h-12 w-12 opacity-50' />
-							<p>
-								Wybierz tydzień i kliknij &quot;Generuj
-								grafik&quot;
-							</p>
-						</div>
-					)}
+					) : null}
 				</CardContent>
 			</Card>
 		</>

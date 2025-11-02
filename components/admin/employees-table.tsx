@@ -61,12 +61,34 @@ export const columns: ColumnDef<Employee>[] = [
 	},
 	{
 		accessorKey: 'first_name',
-		header: 'First Name',
+		header: ({ column }) => {
+			return (
+				<Button
+					variant='ghost'
+					onClick={() =>
+						column.toggleSorting(column.getIsSorted() === 'asc')
+					}>
+					First Name
+					<ArrowUpDown />
+				</Button>
+			);
+		},
 		cell: ({ row }) => <div>{row.getValue('first_name')}</div>,
 	},
 	{
 		accessorKey: 'last_name',
-		header: 'Last Name',
+		header: ({ column }) => {
+			return (
+				<Button
+					variant='ghost'
+					onClick={() =>
+						column.toggleSorting(column.getIsSorted() === 'asc')
+					}>
+					Last Name
+					<ArrowUpDown />
+				</Button>
+			);
+		},
 		cell: ({ row }) => <div>{row.getValue('last_name')}</div>,
 	},
 	{

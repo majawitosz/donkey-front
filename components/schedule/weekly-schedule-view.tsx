@@ -5,7 +5,16 @@ import * as React from 'react';
 import { format, addDays } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { fetchEmployeeDetails } from '@/lib/actions';
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { fetchEmployeeDetails, updateShift } from '@/lib/actions';
 import type { components } from '@/lib/types/openapi';
 
 type GenerateResultOut = components['schemas']['GenerateResultOut'];
@@ -13,11 +22,15 @@ type ScheduleShiftOut = components['schemas']['ScheduleShiftOut'];
 type ShiftAssignedEmployeeOut =
 	components['schemas']['ShiftAssignedEmployeeOut'];
 type ShiftEmployeeSegmentOut = components['schemas']['ShiftEmployeeSegmentOut'];
+type ShiftUpdateIn = components['schemas']['ShiftUpdateIn'];
+type ShiftAssignedEmployeeIn = components['schemas']['ShiftAssignedEmployeeIn'];
+type ShiftEmployeeSegmentIn = components['schemas']['ShiftEmployeeSegmentIn'];
 type UserDetail = components['schemas']['UserList'];
 
 interface WeeklyScheduleViewProps {
 	weekStart: Date;
 	scheduleData: GenerateResultOut;
+	onScheduleUpdate?: () => void;
 }
 
 // Generujemy godziny od 6:00 do 22:00
@@ -49,10 +62,26 @@ const getShiftsForDay = (
 };
 
 // Komponent pojedynczego bloku zmiany
-function ShiftBlock({ shift }: { shift: ScheduleShiftOut }) {
+function ShiftBlock({
+	shift,
+	onScheduleUpdate,
+}: {
+	shift: ScheduleShiftOut;
+	onScheduleUpdate?: () => void;
+}) {
 	const [employeeNames, setEmployeeNames] = React.useState<
 		Record<string, string>
 	>({});
+	const [dialogOpen, setDialogOpen] = React.useState(false);
+	const [selectedSegment, setSelectedSegment] = React.useState<{
+		employee: ShiftAssignedEmployeeOut;
+		segment: ShiftEmployeeSegmentOut;
+		employeeName: string;
+	} | null>(null);
+	const [splitShift, setSplitShift] = React.useState(false);
+	const [newStartTime, setNewStartTime] = React.useState('');
+	const [newEndTime, setNewEndTime] = React.useState('');
+	const [splitTime, setSplitTime] = React.useState('');
 
 	const topOffset = timeToPixels(shift.start);
 	const bottomOffset = timeToPixels(shift.end);
@@ -117,7 +146,7 @@ function ShiftBlock({ shift }: { shift: ScheduleShiftOut }) {
 							const segmentHeight =
 								timeToPixels(segment.end) -
 								timeToPixels(segment.start) -
-								2; // Skróć o 2px
+								4;
 
 							const employeeName =
 								employeeNames[employee.employee_id] ||
@@ -126,10 +155,23 @@ function ShiftBlock({ shift }: { shift: ScheduleShiftOut }) {
 							return (
 								<div
 									key={`${empIdx}-${segIdx}`}
-									className={`absolute inset-x-0 bg-blue-500/90 dark:bg-blue-600/80 rounded-sm flex items-center justify-center text-white font-medium px-1`}
+									className={`absolute inset-x-0 bg-blue-500/90 dark:bg-blue-600/80 rounded-sm flex items-center justify-center text-white font-medium px-1 cursor-pointer hover:bg-blue-600/90 dark:hover:bg-blue-700/80 transition-colors`}
 									style={{
 										top: `${segmentTop}px`,
 										height: `${segmentHeight}px`,
+									}}
+									onClick={(e) => {
+										e.stopPropagation();
+										setSelectedSegment({
+											employee,
+											segment,
+											employeeName,
+										});
+										setNewStartTime(segment.start);
+										setNewEndTime(segment.end);
+										setSplitShift(false);
+										setSplitTime('');
+										setDialogOpen(true);
 									}}>
 									{segmentHeight > 30 && (
 										<div className='text-center overflow-hidden text-xs'>
@@ -157,7 +199,7 @@ function ShiftBlock({ shift }: { shift: ScheduleShiftOut }) {
 								const segmentHeight =
 									timeToPixels(segment.end) -
 									timeToPixels(segment.start) -
-									2; // Skróć o 2px
+									4;
 
 								return (
 									<div
@@ -183,6 +225,203 @@ function ShiftBlock({ shift }: { shift: ScheduleShiftOut }) {
 							})}
 						</>
 					)}
+
+				{/* Dialog do edycji segmentu */}
+				<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+					<DialogContent>
+						<DialogHeader>
+							<DialogTitle>Zmień godziny zmiany</DialogTitle>
+						</DialogHeader>
+						<div className='space-y-4 py-4'>
+							{selectedSegment && (
+								<div className='text-sm text-muted-foreground mb-4'>
+									Edycja zmiany:{' '}
+									{selectedSegment.employeeName}
+								</div>
+							)}
+
+							<div className='space-y-2'>
+								<Label htmlFor='start-time'>
+									Godzina rozpoczęcia
+								</Label>
+								<Input
+									id='start-time'
+									type='time'
+									value={newStartTime}
+									onChange={(e) =>
+										setNewStartTime(e.target.value)
+									}
+								/>
+							</div>
+
+							<div className='space-y-2'>
+								<Label htmlFor='end-time'>
+									Godzina zakończenia
+								</Label>
+								<Input
+									id='end-time'
+									type='time'
+									value={newEndTime}
+									onChange={(e) =>
+										setNewEndTime(e.target.value)
+									}
+								/>
+							</div>
+
+							<div className='flex items-center space-x-2'>
+								<input
+									type='checkbox'
+									id='split-shift'
+									checked={splitShift}
+									onChange={(e) =>
+										setSplitShift(e.target.checked)
+									}
+									className='w-4 h-4'
+								/>
+								<Label htmlFor='split-shift'>
+									Podziel zmianę
+								</Label>
+							</div>
+
+							{splitShift && (
+								<div className='space-y-2 pl-6 border-l-2 border-gray-200 dark:border-gray-700'>
+									<Label htmlFor='split-time'>
+										O której godzinie zrobić podział?
+									</Label>
+									<Input
+										id='split-time'
+										type='time'
+										value={splitTime}
+										onChange={(e) =>
+											setSplitTime(e.target.value)
+										}
+										placeholder='np. 12:00'
+									/>
+								</div>
+							)}
+
+							<div className='flex justify-end space-x-2 pt-4'>
+								<Button
+									variant='outline'
+									onClick={() => setDialogOpen(false)}>
+									Anuluj
+								</Button>
+								<Button
+									onClick={async () => {
+										if (!selectedSegment) return;
+
+										try {
+											const updatedEmployeesDetail: ShiftAssignedEmployeeIn[] =
+												shift.assigned_employees_detail!.map(
+													(emp) => {
+														if (
+															emp.employee_id ===
+															selectedSegment
+																.employee
+																.employee_id
+														) {
+															// Aktualizuj segmenty dla wybranego pracownika
+															if (
+																splitShift &&
+																splitTime
+															) {
+																// Podziel segment na dwa
+																const newSegments: ShiftEmployeeSegmentIn[] =
+																	[
+																		{
+																			start: newStartTime,
+																			end: splitTime,
+																		},
+																		{
+																			start: splitTime,
+																			end: newEndTime,
+																		},
+																	];
+																return {
+																	employee_id:
+																		emp.employee_id,
+																	employee_name:
+																		selectedSegment.employeeName,
+																	segments:
+																		newSegments,
+																};
+															} else {
+																// Tylko zmień godziny
+																const newSegments: ShiftEmployeeSegmentIn[] =
+																	[
+																		{
+																			start: newStartTime,
+																			end: newEndTime,
+																		},
+																	];
+																return {
+																	employee_id:
+																		emp.employee_id,
+																	employee_name:
+																		selectedSegment.employeeName,
+																	segments:
+																		newSegments,
+																};
+															}
+														}
+														// Pozostaw innych pracowników bez zmian
+														return {
+															employee_id:
+																emp.employee_id,
+															employee_name:
+																emp.employee_name,
+															segments:
+																emp.segments,
+														};
+													}
+												);
+
+											const shiftUpdate: ShiftUpdateIn = {
+												id: shift.id,
+												date: shift.date,
+												location: shift.location,
+												start: shift.start,
+												end: shift.end,
+												demand: shift.demand,
+												assigned_employees:
+													shift.assigned_employees,
+												assigned_employees_detail:
+													updatedEmployeesDetail,
+												missing_segments:
+													shift.missing_segments,
+												missing_minutes:
+													shift.missing_minutes,
+											};
+
+											console.log(
+												'Wysyłam dane do updateShift:',
+												{
+													shiftId: shift.id,
+													shiftUpdate,
+												}
+											);
+
+											await updateShift(shiftUpdate);
+											setDialogOpen(false);
+
+											// Odśwież grafik po zapisaniu
+											if (onScheduleUpdate) {
+												onScheduleUpdate();
+											}
+										} catch (error) {
+											console.error(
+												'Failed to update shift:',
+												error
+											);
+											// Tutaj możesz dodać powiadomienie o błędzie
+										}
+									}}>
+									Zapisz
+								</Button>
+							</div>
+						</div>
+					</DialogContent>
+				</Dialog>
 			</div>
 		);
 	}
@@ -206,16 +445,22 @@ function ShiftBlock({ shift }: { shift: ScheduleShiftOut }) {
 function DayColumn({
 	date,
 	shifts,
+	onScheduleUpdate,
 }: {
 	date: Date;
 	shifts: ScheduleShiftOut[];
+	onScheduleUpdate?: () => void;
 }) {
 	return (
 		<div
 			className='relative'
 			style={{ height: `${hours.length * HOUR_HEIGHT}px` }}>
 			{shifts.map((shift) => (
-				<ShiftBlock key={shift.id} shift={shift} />
+				<ShiftBlock
+					key={shift.id}
+					shift={shift}
+					onScheduleUpdate={onScheduleUpdate}
+				/>
 			))}
 		</div>
 	);
@@ -224,6 +469,7 @@ function DayColumn({
 export default function WeeklyScheduleView({
 	weekStart,
 	scheduleData,
+	onScheduleUpdate,
 }: WeeklyScheduleViewProps) {
 	const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
@@ -302,6 +548,7 @@ export default function WeeklyScheduleView({
 									key={dayIdx}
 									date={day}
 									shifts={dayShifts}
+									onScheduleUpdate={onScheduleUpdate}
 								/>
 							);
 						})}

@@ -301,8 +301,8 @@ export async function resetCompanyCode(): Promise<CompanyCodeResponse> {
 	);
 }
 
-export async function fetchAvailability(params?: {
-	employee_id?: string;
+export async function fetchAvailability(params: {
+	employee_id: string; // Teraz wymagane!
 	date_from?: string;
 	date_to?: string;
 	only_with_slots?: boolean;
@@ -314,16 +314,21 @@ export async function fetchAvailability(params?: {
 	const fullUrl = `${baseUrl}/schedule/availability`;
 	const url = new URL(fullUrl);
 
-	// Backend FastAPI wymaga WSZYSTKICH parametrów, więc podajemy wartości domyślne
-	url.searchParams.set('employee_id', params?.employee_id || '');
-	url.searchParams.set('date_from', params?.date_from || '');
-	url.searchParams.set('date_to', params?.date_to || '');
+	// Backend FastAPI wymaga employee_id jako obowiązkowy parametr
+	url.searchParams.set('employee_id', params.employee_id);
+
+	if (params.date_from) {
+		url.searchParams.set('date_from', params.date_from);
+	}
+	if (params.date_to) {
+		url.searchParams.set('date_to', params.date_to);
+	}
 	url.searchParams.set(
 		'only_with_slots',
-		String(params?.only_with_slots ?? false)
+		String(params.only_with_slots ?? false)
 	);
-	url.searchParams.set('limit', String(params?.limit ?? 100));
-	url.searchParams.set('offset', String(params?.offset ?? 0));
+	url.searchParams.set('limit', String(params.limit ?? 100));
+	url.searchParams.set('offset', String(params.offset ?? 0));
 
 	const response = await apiRequest<PaginatedResponse<AvailabilityOut>>(
 		url,
@@ -461,6 +466,25 @@ export async function fetchEmployeeDetails(
 			method: 'GET',
 		},
 		'Failed to fetch employee details'
+	);
+	return response;
+}
+
+export async function updateShift(
+	shiftData: components['schemas']['ShiftUpdateIn']
+): Promise<components['schemas']['ShiftOut']> {
+	const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+	const endpoint = `${baseUrl}/schedule/schedule/shift`;
+	const response = await apiRequest<components['schemas']['ShiftOut']>(
+		endpoint,
+		{
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify(shiftData),
+		},
+		'Failed to update shift'
 	);
 	return response;
 }
