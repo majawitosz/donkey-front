@@ -7,12 +7,18 @@ import { AuthError } from 'next-auth';
 import type { components } from '@/lib/types/openapi';
 import { decodeJwtPayload } from './token';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL + '/accounts/';
+const API_ROOT_URL = process.env.NEXT_PUBLIC_API_URL
+        ? process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '')
+        : undefined;
+const ACCOUNTS_BASE_URL = API_ROOT_URL ? `${API_ROOT_URL}/accounts/` : undefined;
 
 type Position = components['schemas']['Position'];
 type UserDetail = components['schemas']['UserList'];
 type AvailabilityOut = components['schemas']['AvailabilityOut'];
 type CompanyCodeResponse = components['schemas']['CompanyCode'];
+type CalendarEventOut = components['schemas']['CalendarEventOut'];
+type MedicalEventOut = components['schemas']['MedicalEventOut'];
+type ExternalCalendarOut = components['schemas']['ExternalCalendarOut'];
 
 export interface CalendarEvent {
         id: string;
@@ -21,11 +27,20 @@ export interface CalendarEvent {
         start: string;
         end?: string | null;
         type?: string | null;
+        category?: string | null;
         location?: string | null;
         all_day?: boolean | null;
         allDay?: boolean | null;
+        status?: string | null;
+        exam_type?: string | null;
+        notes?: string | null;
+        color?: string | null;
         external_calendar?: string | null;
         externalCalendar?: string | null;
+        original_category?: string | null;
+        employee_id?: string | null;
+        created_at?: string | null;
+        updated_at?: string | null;
         [key: string]: unknown;
 }
 
@@ -34,9 +49,17 @@ export interface CalendarIntegration {
         provider: string;
         connected: boolean;
         last_sync_at?: string | null;
+        last_synced_at?: string | null;
         status?: string | null;
         sync_error?: string | null;
         primary_calendar?: string | null;
+        name?: string | null;
+        provider_code?: string | null;
+        active?: boolean | null;
+        external_id?: string | null;
+        employee_id?: string | null;
+        settings?: Record<string, unknown> | null;
+        sync_token?: string | null;
         [key: string]: unknown;
 }
 
@@ -54,16 +77,36 @@ type PaginatedResponse<T> = {
 };
 
 function resolveApiUrl(endpoint: string | URL): string {
-	if (endpoint instanceof URL) {
-		return endpoint.toString();
-	}
-	if (/^https?:\/\//i.test(endpoint)) {
-		return endpoint;
-	}
-	if (!API_BASE_URL) {
-		throw new Error('API base URL is not defined');
-	}
-	return new URL(endpoint, API_BASE_URL).toString();
+        if (endpoint instanceof URL) {
+                return endpoint.toString();
+        }
+        if (/^https?:\/\//i.test(endpoint)) {
+                return endpoint;
+        }
+        if (!API_ROOT_URL) {
+                throw new Error('API base URL is not defined');
+        }
+
+        const normalized = endpoint.replace(/^\/+/, '');
+
+        if (normalized.startsWith('api/')) {
+                const rootWithoutApi = API_ROOT_URL.replace(/\/api$/, '');
+                return `${rootWithoutApi}/${normalized}`;
+        }
+
+        if (
+                normalized.startsWith('schedule/') ||
+                normalized.startsWith('calendar/') ||
+                normalized.startsWith('accounts/')
+        ) {
+                return `${API_ROOT_URL}/${normalized}`;
+        }
+
+        if (!ACCOUNTS_BASE_URL) {
+                throw new Error('Accounts API base URL is not defined');
+        }
+
+        return new URL(normalized, ACCOUNTS_BASE_URL).toString();
 }
 
 // Funkcja odświeżająca token
@@ -216,178 +259,180 @@ async function apiRequest<T>(
         return response.json() as Promise<T>;
 }
 
-function normalizeDateInput(value: unknown): string | null {
-        if (!value) {
-                return null;
-        }
-        if (typeof value === 'string' && value.trim().length > 0) {
-                return value;
-        }
-        if (value instanceof Date && !Number.isNaN(value.getTime())) {
-                return value.toISOString();
-        }
-        return null;
-}
-
-function normalizeCalendarEvent(
-        value: unknown,
-        fallbackIndex: number
-): CalendarEvent | null {
-        if (!value || typeof value !== 'object') {
-                return null;
-        }
-
-        const raw = value as Record<string, unknown>;
-
-        const start =
-                normalizeDateInput(raw.start) ||
-                normalizeDateInput(raw.start_time) ||
-                normalizeDateInput(raw.date_from) ||
-                normalizeDateInput(raw.begin) ||
-                normalizeDateInput(raw.from);
-
-        if (!start) {
-                return null;
-        }
-
-        const end =
-                normalizeDateInput(raw.end) ||
-                normalizeDateInput(raw.end_time) ||
-                normalizeDateInput(raw.date_to) ||
-                normalizeDateInput(raw.finish) ||
-                normalizeDateInput(raw.to) ||
-                start;
-
-        const idSource =
-                raw.id ||
-                raw.uuid ||
-                raw.slug ||
-                raw.external_id ||
-                `${start}-${fallbackIndex}`;
-
-        return {
-                id: String(idSource),
-                title: String(raw.title || raw.name || 'Wydarzenie'),
-                description:
-                        (raw.description as string | null | undefined) ??
-                        (raw.notes as string | null | undefined) ??
-                        null,
-                start,
-                end,
-                type: (raw.type as string | undefined) ||
-                        (raw.category as string | undefined) ||
-                        (raw.kind as string | undefined) ||
-                        null,
-                location:
-                        (raw.location as string | null | undefined) ??
-                        (raw.place as string | null | undefined) ??
-                        null,
-                all_day:
-                        (raw.all_day as boolean | null | undefined) ??
-                        (raw.is_all_day as boolean | null | undefined) ??
-                        (raw.allDay as boolean | null | undefined) ??
-                        null,
-                allDay:
-                        (raw.allDay as boolean | null | undefined) ??
-                        (raw.all_day as boolean | null | undefined) ??
-                        null,
-                external_calendar:
-                        (raw.external_calendar as string | null | undefined) ??
-                        (raw.provider as string | null | undefined) ??
-                        (raw.source as string | null | undefined) ??
-                        null,
-                externalCalendar:
-                        (raw.externalCalendar as string | null | undefined) ??
-                        (raw.external_calendar as string | null | undefined) ??
-                        null,
-        };
-}
-
-function normalizeCalendarIntegration(
-        value: unknown,
-        fallbackIndex: number
-): CalendarIntegration | null {
-        if (!value || typeof value !== 'object') {
-                return null;
-        }
-
-        const raw = value as Record<string, unknown>;
-        const provider = String(raw.provider || raw.name || 'Kalendarz zewnętrzny');
-        const id = String(
-                raw.id ||
-                        raw.uuid ||
-                        raw.slug ||
-                        raw.provider ||
-                        `integration-${fallbackIndex}`
-        );
-
-        return {
-                id,
-                provider,
-                connected:
-                        Boolean(
-                                raw.connected ??
-                                        raw.enabled ??
-                                        raw.is_connected ??
-                                        raw.status === 'connected'
-                        ),
-                last_sync_at:
-                        (raw.last_sync_at as string | null | undefined) ??
-                        (raw.lastSyncedAt as string | null | undefined) ??
-                        (raw.last_sync as string | null | undefined) ??
-                        null,
-                status: (raw.status as string | null | undefined) ?? null,
-                sync_error:
-                        (raw.sync_error as string | null | undefined) ??
-                        (raw.error as string | null | undefined) ??
-                        null,
-                primary_calendar:
-                        (raw.primary_calendar as string | null | undefined) ??
-                        (raw.calendar as string | null | undefined) ??
-                        null,
-        };
-}
-
 export async function fetchCalendarOverview(): Promise<CalendarOverview> {
-        const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
-        const endpoint = `${baseUrl}/calendars`;
+        if (!API_ROOT_URL) {
+                throw new Error('NEXT_PUBLIC_API_URL is not defined');
+        }
 
-        const rawResponse = await apiRequest<unknown>(
-                endpoint,
-                { method: 'GET' },
-                'Failed to fetch calendars'
-        );
+        const eventsUrl = new URL(`${API_ROOT_URL}/calendar/events`);
+        eventsUrl.searchParams.set('limit', '200');
 
-        const rawObject = rawResponse as Record<string, unknown> | unknown[] | null;
+        const medicalUrl = new URL(`${API_ROOT_URL}/calendar/medical`);
+        medicalUrl.searchParams.set('limit', '200');
 
-        const eventsSource = Array.isArray(rawObject)
-                ? rawObject
-                : Array.isArray(rawObject?.events)
-                ? (rawObject?.events as unknown[])
-                : Array.isArray(rawObject?.items)
-                ? (rawObject?.items as unknown[])
-                : [];
+        const integrationsUrl = new URL(`${API_ROOT_URL}/calendar/sources`);
+        integrationsUrl.searchParams.set('limit', '100');
 
-        const integrationsSource = Array.isArray(rawObject)
-                ? []
-                : Array.isArray(rawObject?.integrations)
-                ? (rawObject?.integrations as unknown[])
-                : Array.isArray(rawObject?.external_calendars)
-                ? (rawObject?.external_calendars as unknown[])
-                : [];
+        const [eventsResult, medicalResult, integrationsResult] = await Promise.allSettled([
+                apiRequest<CalendarEventOut[]>(eventsUrl, { method: 'GET' }, 'Failed to fetch calendar events'),
+                apiRequest<MedicalEventOut[]>(
+                        medicalUrl,
+                        { method: 'GET' },
+                        'Failed to fetch medical calendar events'
+                ),
+                apiRequest<ExternalCalendarOut[]>(
+                        integrationsUrl,
+                        { method: 'GET' },
+                        'Failed to fetch external calendars'
+                ),
+        ]);
 
-        const events = eventsSource
-                .map((item, index) => normalizeCalendarEvent(item, index))
-                .filter((item): item is CalendarEvent => item !== null);
+        const events: CalendarEvent[] = [];
 
-        const integrations = integrationsSource
-                .map((item, index) => normalizeCalendarIntegration(item, index))
-                .filter((item): item is CalendarIntegration => item !== null);
+        if (eventsResult.status === 'fulfilled') {
+                events.push(...eventsResult.value.map(mapApiCalendarEvent));
+        } else {
+                console.error(eventsResult.reason);
+        }
+
+        if (medicalResult.status === 'fulfilled') {
+                events.push(...medicalResult.value.map(mapMedicalEvent));
+        } else {
+                console.error(medicalResult.reason);
+        }
+
+        const integrations: CalendarIntegration[] = [];
+
+        if (integrationsResult.status === 'fulfilled') {
+                integrations.push(...integrationsResult.value.map(mapExternalCalendar));
+        } else {
+                console.error(integrationsResult.reason);
+        }
 
         return {
                 events,
                 integrations,
         };
+}
+
+function normalizeEventCategory(category: string | null | undefined): string {
+        if (!category) {
+                return 'schedule';
+        }
+
+        const normalized = category.toLowerCase();
+
+        if (normalized === 'leave' || normalized === 'vacation') {
+                return 'vacation';
+        }
+        if (normalized === 'training') {
+                return 'training';
+        }
+        if (normalized === 'medical') {
+                return 'medical';
+        }
+
+        return 'schedule';
+}
+
+function mapApiCalendarEvent(event: CalendarEventOut): CalendarEvent {
+        const category = normalizeEventCategory(event.category);
+        const end = event.end_at ?? event.start_at;
+
+        const normalized: CalendarEvent = {
+                id: String(event.id),
+                title: event.title,
+                description: event.description ?? null,
+                start: event.start_at,
+                end,
+                type: category,
+                category,
+                location: event.location ?? null,
+                color: event.color ?? null,
+                all_day: null,
+                allDay: null,
+        };
+
+        normalized.original_category = event.category ?? null;
+        normalized.employee_id = event.employee_id ?? null;
+        normalized.created_at = event.created_at ?? null;
+        normalized.updated_at = event.updated_at ?? null;
+
+        return normalized;
+}
+
+function mapMedicalEvent(event: MedicalEventOut): CalendarEvent {
+        const end = event.end_at ?? event.start_at;
+
+        const normalized: CalendarEvent = {
+                id: String(event.id),
+                title: event.title,
+                description: event.description ?? event.notes ?? null,
+                start: event.start_at,
+                end,
+                type: 'medical',
+                category: 'medical',
+                location: event.location ?? null,
+                status: event.status ?? null,
+                exam_type: event.exam_type ?? null,
+                notes: event.notes ?? null,
+                all_day: null,
+                allDay: null,
+        };
+
+        normalized.employee_id = event.employee_id ?? null;
+        normalized.created_at = event.created_at ?? null;
+        normalized.updated_at = event.updated_at ?? null;
+
+        return normalized;
+}
+
+function mapExternalCalendar(integration: ExternalCalendarOut): CalendarIntegration {
+        const providerLabel = formatProviderName(integration.provider);
+        const connectionName = integration.name?.trim() || providerLabel;
+        const lastSynced = integration.last_synced_at ?? null;
+        const isActive = integration.active ?? true;
+
+        const normalized: CalendarIntegration = {
+                id: String(integration.id),
+                provider: connectionName,
+                name: integration.name ?? connectionName,
+                provider_code: integration.provider ?? null,
+                connected: Boolean(isActive),
+                active: integration.active ?? null,
+                last_sync_at: lastSynced,
+                last_synced_at: lastSynced,
+                primary_calendar: integration.external_id ?? null,
+                external_id: integration.external_id ?? null,
+                status: isActive ? 'active' : 'inactive',
+        };
+
+        normalized.employee_id = integration.employee_id ?? null;
+        normalized.settings = integration.settings ?? null;
+        normalized.sync_token = integration.sync_token ?? null;
+
+        return normalized;
+}
+
+function formatProviderName(provider?: string | null): string {
+        if (!provider) {
+                return 'Inny kalendarz';
+        }
+
+        const normalized = provider.toLowerCase();
+
+        switch (normalized) {
+                case 'google':
+                        return 'Google Calendar';
+                case 'outlook':
+                        return 'Microsoft Outlook';
+                case 'ics':
+                        return 'Plik ICS';
+                case 'other':
+                        return 'Inny kalendarz';
+                default:
+                        return provider.charAt(0).toUpperCase() + provider.slice(1);
+        }
 }
 
 export async function authenticate(
@@ -421,12 +466,15 @@ export async function signOutUser() {
 }
 
 export async function fetchEmployees(search?: string): Promise<UserDetail[]> {
-	const url = new URL('employees/', API_BASE_URL);
-	if (search) {
-		url.searchParams.set('search', search);
-	}
-	return apiRequest<UserDetail[]>(
-		url,
+        if (!ACCOUNTS_BASE_URL) {
+                throw new Error('API base URL is not defined');
+        }
+        const url = new URL('employees/', ACCOUNTS_BASE_URL);
+        if (search) {
+                url.searchParams.set('search', search);
+        }
+        return apiRequest<UserDetail[]>(
+                url,
 		{ method: 'GET' },
 		'Failed to fetch employees'
 	);

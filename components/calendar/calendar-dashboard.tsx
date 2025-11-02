@@ -186,7 +186,8 @@ export function CalendarDashboard({ events, integrations, error }: CalendarDashb
             <AlertTriangle className='h-4 w-4' />
             <AlertTitle>Nie udało się pobrać danych kalendarza</AlertTitle>
             <AlertDescription>
-              {error}. Spróbuj odświeżyć stronę lub wygenerować grafik ponownie.
+              {error}. Upewnij się, że masz aktywną sesję (wymagana autoryzacja) i spróbuj
+              odświeżyć stronę.
             </AlertDescription>
           </Alert>
         ) : null}
@@ -411,6 +412,14 @@ function EventCard({
             {event.description ? (
               <p className='mt-1 text-sm text-muted-foreground line-clamp-3'>{event.description}</p>
             ) : null}
+            {category === 'medical' && (event.exam_type || event.status) ? (
+              <div className='mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>
+                {event.exam_type ? <Badge variant='outline'>{event.exam_type}</Badge> : null}
+                {event.status ? (
+                  <Badge variant='secondary'>{formatMedicalStatus(event.status)}</Badge>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         </div>
         {event.location ? (
@@ -481,9 +490,11 @@ function IntegrationManager({ integrations }: { integrations: CalendarIntegratio
           const connected = Boolean(integration.connected);
           const statusLabel = connected ? 'Połączono' : 'Rozłączono';
           const statusVariant = connected ? 'default' : 'outline';
-          const lastSyncLabel = integration.last_sync_at
-            ? formatDateTime(integration.last_sync_at)
-            : 'Brak danych';
+          const lastSyncValue = integration.last_sync_at ?? integration.last_synced_at ?? null;
+          const lastSyncLabel = lastSyncValue ? formatDateTime(lastSyncValue) : 'Brak danych';
+          const providerBadge = formatIntegrationProvider(integration.provider_code);
+          const externalBadge = integration.primary_calendar;
+          const connectionLabel = integration.name ?? integration.provider;
 
           return (
             <div
@@ -491,12 +502,13 @@ function IntegrationManager({ integrations }: { integrations: CalendarIntegratio
               className='flex flex-col gap-4 rounded-lg border p-4 md:flex-row md:items-center md:justify-between'>
               <div className='space-y-2'>
                 <div className='flex flex-wrap items-center gap-2'>
-                  <p className='text-sm font-semibold text-foreground'>
-                    {integration.provider}
-                  </p>
+                  <p className='text-sm font-semibold text-foreground'>{connectionLabel}</p>
                   <Badge variant={statusVariant}>{statusLabel}</Badge>
-                  {integration.primary_calendar ? (
-                    <Badge variant='outline'>{integration.primary_calendar}</Badge>
+                  {providerBadge ? <Badge variant='outline'>{providerBadge}</Badge> : null}
+                  {externalBadge ? (
+                    <Badge variant='outline' className='text-xs font-medium'>
+                      {externalBadge}
+                    </Badge>
                   ) : null}
                 </div>
                 <p className='text-sm text-muted-foreground'>
@@ -529,7 +541,27 @@ function IntegrationManager({ integrations }: { integrations: CalendarIntegratio
 }
 
 function detectCategory(event: CalendarEvent): CalendarCategory {
+  const directCategory =
+    typeof event.category === 'string' ? event.category.toLowerCase() : undefined;
+  if (isCalendarCategory(directCategory)) {
+    return directCategory;
+  }
+
+  const originalCategory =
+    typeof event.original_category === 'string'
+      ? event.original_category.toLowerCase()
+      : undefined;
+  if (isCalendarCategory(originalCategory)) {
+    return originalCategory;
+  }
+  if (originalCategory === 'leave') {
+    return 'vacation';
+  }
+
   const typeValue = String(event.type ?? '').toLowerCase();
+  if (isCalendarCategory(typeValue)) {
+    return typeValue;
+  }
   const titleValue = String(event.title ?? '').toLowerCase();
 
   if (typeValue.includes('vac') || typeValue.includes('leave') || titleValue.includes('urlop')) {
@@ -548,6 +580,13 @@ function detectCategory(event: CalendarEvent): CalendarCategory {
     return 'medical';
   }
   return 'schedule';
+}
+
+function isCalendarCategory(value: string | undefined): value is CalendarCategory {
+  if (!value) {
+    return false;
+  }
+  return value in CATEGORY_CONFIG;
 }
 
 function parseEventDate(value: string | null | undefined): Date | null {
@@ -671,6 +710,41 @@ function formatDateTime(value: string): string {
     return value;
   }
   return format(parsed, 'd MMMM yyyy, HH:mm', { locale: pl });
+}
+
+function formatIntegrationProvider(provider?: string | null): string | null {
+  if (!provider) {
+    return null;
+  }
+  const normalized = provider.toLowerCase();
+  switch (normalized) {
+    case 'google':
+      return 'Google Calendar';
+    case 'outlook':
+      return 'Microsoft Outlook';
+    case 'ics':
+      return 'Plik ICS';
+    case 'other':
+      return 'Inny kalendarz';
+    default:
+      return provider.charAt(0).toUpperCase() + provider.slice(1);
+  }
+}
+
+function formatMedicalStatus(status: string): string {
+  const normalized = status.toLowerCase();
+  switch (normalized) {
+    case 'planned':
+      return 'Zaplanowane';
+    case 'confirmed':
+      return 'Potwierdzone';
+    case 'completed':
+      return 'Zrealizowane';
+    case 'cancelled':
+      return 'Anulowane';
+    default:
+      return status;
+  }
 }
 
 function pluralize(count: number, one: string, few: string, many: string) {
