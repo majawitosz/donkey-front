@@ -14,11 +14,42 @@ type UserDetail = components['schemas']['UserList'];
 type AvailabilityOut = components['schemas']['AvailabilityOut'];
 type CompanyCodeResponse = components['schemas']['CompanyCode'];
 
+export interface CalendarEvent {
+        id: string;
+        title: string;
+        description?: string | null;
+        start: string;
+        end?: string | null;
+        type?: string | null;
+        location?: string | null;
+        all_day?: boolean | null;
+        allDay?: boolean | null;
+        external_calendar?: string | null;
+        externalCalendar?: string | null;
+        [key: string]: unknown;
+}
+
+export interface CalendarIntegration {
+        id: string;
+        provider: string;
+        connected: boolean;
+        last_sync_at?: string | null;
+        status?: string | null;
+        sync_error?: string | null;
+        primary_calendar?: string | null;
+        [key: string]: unknown;
+}
+
+export interface CalendarOverview {
+        events: CalendarEvent[];
+        integrations: CalendarIntegration[];
+}
+
 // Typ dla odpowiedzi z paginacją
 type PaginatedResponse<T> = {
-	count: number;
-	next: string | null;
-	previous: string | null;
+        count: number;
+        next: string | null;
+        previous: string | null;
 	results: T[];
 };
 
@@ -159,9 +190,9 @@ async function authorizedFetch(
 }
 
 async function apiRequest<T>(
-	endpoint: string | URL,
-	init: RequestInit,
-	errorMessage: string
+        endpoint: string | URL,
+        init: RequestInit,
+        errorMessage: string
 ): Promise<T> {
 	const response = await authorizedFetch(endpoint, init);
 
@@ -182,7 +213,181 @@ async function apiRequest<T>(
 		return undefined as T;
 	}
 
-	return response.json() as Promise<T>;
+        return response.json() as Promise<T>;
+}
+
+function normalizeDateInput(value: unknown): string | null {
+        if (!value) {
+                return null;
+        }
+        if (typeof value === 'string' && value.trim().length > 0) {
+                return value;
+        }
+        if (value instanceof Date && !Number.isNaN(value.getTime())) {
+                return value.toISOString();
+        }
+        return null;
+}
+
+function normalizeCalendarEvent(
+        value: unknown,
+        fallbackIndex: number
+): CalendarEvent | null {
+        if (!value || typeof value !== 'object') {
+                return null;
+        }
+
+        const raw = value as Record<string, unknown>;
+
+        const start =
+                normalizeDateInput(raw.start) ||
+                normalizeDateInput(raw.start_time) ||
+                normalizeDateInput(raw.date_from) ||
+                normalizeDateInput(raw.begin) ||
+                normalizeDateInput(raw.from);
+
+        if (!start) {
+                return null;
+        }
+
+        const end =
+                normalizeDateInput(raw.end) ||
+                normalizeDateInput(raw.end_time) ||
+                normalizeDateInput(raw.date_to) ||
+                normalizeDateInput(raw.finish) ||
+                normalizeDateInput(raw.to) ||
+                start;
+
+        const idSource =
+                raw.id ||
+                raw.uuid ||
+                raw.slug ||
+                raw.external_id ||
+                `${start}-${fallbackIndex}`;
+
+        return {
+                id: String(idSource),
+                title: String(raw.title || raw.name || 'Wydarzenie'),
+                description:
+                        (raw.description as string | null | undefined) ??
+                        (raw.notes as string | null | undefined) ??
+                        null,
+                start,
+                end,
+                type: (raw.type as string | undefined) ||
+                        (raw.category as string | undefined) ||
+                        (raw.kind as string | undefined) ||
+                        null,
+                location:
+                        (raw.location as string | null | undefined) ??
+                        (raw.place as string | null | undefined) ??
+                        null,
+                all_day:
+                        (raw.all_day as boolean | null | undefined) ??
+                        (raw.is_all_day as boolean | null | undefined) ??
+                        (raw.allDay as boolean | null | undefined) ??
+                        null,
+                allDay:
+                        (raw.allDay as boolean | null | undefined) ??
+                        (raw.all_day as boolean | null | undefined) ??
+                        null,
+                external_calendar:
+                        (raw.external_calendar as string | null | undefined) ??
+                        (raw.provider as string | null | undefined) ??
+                        (raw.source as string | null | undefined) ??
+                        null,
+                externalCalendar:
+                        (raw.externalCalendar as string | null | undefined) ??
+                        (raw.external_calendar as string | null | undefined) ??
+                        null,
+        };
+}
+
+function normalizeCalendarIntegration(
+        value: unknown,
+        fallbackIndex: number
+): CalendarIntegration | null {
+        if (!value || typeof value !== 'object') {
+                return null;
+        }
+
+        const raw = value as Record<string, unknown>;
+        const provider = String(raw.provider || raw.name || 'Kalendarz zewnętrzny');
+        const id = String(
+                raw.id ||
+                        raw.uuid ||
+                        raw.slug ||
+                        raw.provider ||
+                        `integration-${fallbackIndex}`
+        );
+
+        return {
+                id,
+                provider,
+                connected:
+                        Boolean(
+                                raw.connected ??
+                                        raw.enabled ??
+                                        raw.is_connected ??
+                                        raw.status === 'connected'
+                        ),
+                last_sync_at:
+                        (raw.last_sync_at as string | null | undefined) ??
+                        (raw.lastSyncedAt as string | null | undefined) ??
+                        (raw.last_sync as string | null | undefined) ??
+                        null,
+                status: (raw.status as string | null | undefined) ?? null,
+                sync_error:
+                        (raw.sync_error as string | null | undefined) ??
+                        (raw.error as string | null | undefined) ??
+                        null,
+                primary_calendar:
+                        (raw.primary_calendar as string | null | undefined) ??
+                        (raw.calendar as string | null | undefined) ??
+                        null,
+        };
+}
+
+export async function fetchCalendarOverview(): Promise<CalendarOverview> {
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+        const endpoint = `${baseUrl}/calendars`;
+
+        const rawResponse = await apiRequest<unknown>(
+                endpoint,
+                { method: 'GET' },
+                'Failed to fetch calendars'
+        );
+
+        const rawObject = rawResponse as Record<string, unknown> | unknown[] | null;
+
+        const eventsSource = Array.isArray(rawObject)
+                ? rawObject
+                : Array.isArray(rawObject?.events)
+                ? (rawObject?.events as unknown[])
+                : Array.isArray(rawObject?.items)
+                ? (rawObject?.items as unknown[])
+                : [];
+
+        const integrationsSource = Array.isArray(rawObject)
+                ? []
+                : Array.isArray(rawObject?.integrations)
+                ? (rawObject?.integrations as unknown[])
+                : Array.isArray(rawObject?.external_calendars)
+                ? (rawObject?.external_calendars as unknown[])
+                : [];
+
+        const events = eventsSource
+                .map((item, index) => normalizeCalendarEvent(item, index))
+                .filter((item): item is CalendarEvent => item !== null);
+
+        const integrations = integrationsSource
+                .map((item, index) => normalizeCalendarIntegration(item, index))
+                .filter((item): item is CalendarIntegration => item !== null);
+
+        return {
+                events,
+                integrations,
+        };
 }
 
 export async function authenticate(
