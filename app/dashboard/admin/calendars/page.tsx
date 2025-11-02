@@ -2,10 +2,11 @@
 
 import { CalendarDashboard } from '@/components/calendar/calendar-dashboard';
 import { fetchCalendarOverview } from '@/lib/actions';
+import type { CalendarOverview } from '@/lib/actions';
 
 export default async function CalendarsPage() {
   let error: string | undefined;
-  let overview = { events: [], integrations: [] };
+  let overview: CalendarOverview = { events: [], integrations: [] };
 
   try {
     overview = await fetchCalendarOverview();
