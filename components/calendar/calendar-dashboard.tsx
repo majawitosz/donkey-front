@@ -14,6 +14,7 @@ import {
   startOfDay,
   differenceInMinutes,
 } from 'date-fns';
+import { endOfDay } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import {
   AlertTriangle,
@@ -38,6 +39,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
@@ -239,7 +241,17 @@ function CalendarTabContent({ category, description, events }: CalendarTabConten
   const eventsByDay = React.useMemo(() => groupEventsByDay(events), [events]);
 
   const selectedKey = format(selectedDate, 'yyyy-MM-dd');
-  const selectedEvents = eventsByDay.get(selectedKey) ?? [];
+  // Show events that either start on the selected day OR span/overlap the selected day
+  const selectedEvents = events.filter((event) => {
+    if (!event.startDate) return false;
+    const eventStart = startOfDay(event.startDate);
+    const eventEnd = event.endDate ? endOfDay(event.endDate) : endOfDay(event.startDate!);
+    const dayStart = startOfDay(selectedDate);
+    const dayEnd = endOfDay(selectedDate);
+
+    // Intervals intersect when eventStart <= dayEnd && eventEnd >= dayStart
+    return !(eventStart > dayEnd || eventEnd < dayStart);
+  });
   const upcomingEvents = React.useMemo(() => getUpcomingEvents(events), [events]);
 
   const config = CATEGORY_CONFIG[category];
@@ -255,7 +267,8 @@ function CalendarTabContent({ category, description, events }: CalendarTabConten
             </CardTitle>
             <CardDescription>{description}</CardDescription>
           </div>
-          <Select value={viewMode} onValueChange={(value) => setViewMode(value as typeof viewMode)}>
+          <div className='flex items-center gap-2'>
+            <Select value={viewMode} onValueChange={(value) => setViewMode(value as typeof viewMode)}>
             <SelectTrigger size='sm' className='min-w-[160px] justify-between'>
               <SelectValue />
             </SelectTrigger>
@@ -266,7 +279,11 @@ function CalendarTabContent({ category, description, events }: CalendarTabConten
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+            </Select>
+            <Link href='/dashboard/admin/calendars/new'>
+              <Button size='sm' className='ml-2'>Dodaj wydarzenie</Button>
+            </Link>
+          </div>
         </div>
       </CardHeader>
       <CardContent className='grid gap-6 lg:grid-cols-[360px_1fr] xl:grid-cols-[400px_1fr]'>

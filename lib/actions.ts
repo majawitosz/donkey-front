@@ -4,6 +4,7 @@
 
 import { signIn, signOut, auth } from '@/auth';
 import { AuthError } from 'next-auth';
+import { redirect } from 'next/navigation';
 import type { components } from '@/lib/types/openapi';
 import { decodeJwtPayload } from './token';
 
@@ -266,12 +267,36 @@ export async function fetchCalendarOverview(): Promise<CalendarOverview> {
 
         const eventsUrl = new URL(`${API_ROOT_URL}/calendar/events`);
         eventsUrl.searchParams.set('limit', '200');
+		// Ensure category is present as a string (FastAPI will validate type)
+		eventsUrl.searchParams.set('category', '');
 
-        const medicalUrl = new URL(`${API_ROOT_URL}/calendar/medical`);
-        medicalUrl.searchParams.set('limit', '200');
+	// Provide safe defaults for query parameters so FastAPI doesn't reject them
+	// if the backend expects certain typed query params. Use ISO strings for
+	// datetimes and string/boolean values as appropriate.
+	const now = new Date();
+	const defaultStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 days ago
+	const defaultEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days ahead
 
-        const integrationsUrl = new URL(`${API_ROOT_URL}/calendar/sources`);
-        integrationsUrl.searchParams.set('limit', '100');
+	// Strings: employee_id and status (empty string is a valid string)
+	eventsUrl.searchParams.set('employee_id', '');
+	eventsUrl.searchParams.set('status', '');
+	// Datetimes: send ISO strings
+	eventsUrl.searchParams.set('start_from', defaultStart.toISOString());
+	eventsUrl.searchParams.set('end_to', defaultEnd.toISOString());
+
+	const medicalUrl = new URL(`${API_ROOT_URL}/calendar/medical`);
+	medicalUrl.searchParams.set('limit', '200');
+	// Medical events use the same default date range and optional string filters
+	medicalUrl.searchParams.set('employee_id', '');
+	medicalUrl.searchParams.set('status', '');
+	medicalUrl.searchParams.set('start_from', defaultStart.toISOString());
+	medicalUrl.searchParams.set('end_to', defaultEnd.toISOString());
+
+	const integrationsUrl = new URL(`${API_ROOT_URL}/calendar/sources`);
+	integrationsUrl.searchParams.set('limit', '100');
+	// External calendars: provider should be a string, active a boolean-like value
+	integrationsUrl.searchParams.set('provider', '');
+	integrationsUrl.searchParams.set('active', String(true));
 
         const [eventsResult, medicalResult, integrationsResult] = await Promise.allSettled([
                 apiRequest<CalendarEventOut[]>(eventsUrl, { method: 'GET' }, 'Failed to fetch calendar events'),
@@ -339,19 +364,19 @@ function mapApiCalendarEvent(event: CalendarEventOut): CalendarEvent {
         const category = normalizeEventCategory(event.category);
         const end = event.end_at ?? event.start_at;
 
-        const normalized: CalendarEvent = {
-                id: String(event.id),
-                title: event.title,
-                description: event.description ?? null,
-                start: event.start_at,
-                end,
-                type: category,
-                category,
-                location: event.location ?? null,
-                color: event.color ?? null,
-                all_day: null,
-                allDay: null,
-        };
+	const normalized: CalendarEvent = {
+				id: String(event.id),
+				title: event.title ?? '',
+		description: event.description ?? null,
+		start: event.start_at ?? '',
+		end,
+		type: category,
+		category,
+		location: event.location ?? null,
+		color: event.color ?? null,
+		all_day: null,
+		allDay: null,
+	};
 
         normalized.original_category = event.category ?? null;
         normalized.employee_id = event.employee_id ?? null;
@@ -364,21 +389,21 @@ function mapApiCalendarEvent(event: CalendarEventOut): CalendarEvent {
 function mapMedicalEvent(event: MedicalEventOut): CalendarEvent {
         const end = event.end_at ?? event.start_at;
 
-        const normalized: CalendarEvent = {
-                id: String(event.id),
-                title: event.title,
-                description: event.description ?? event.notes ?? null,
-                start: event.start_at,
-                end,
-                type: 'medical',
-                category: 'medical',
-                location: event.location ?? null,
-                status: event.status ?? null,
-                exam_type: event.exam_type ?? null,
-                notes: event.notes ?? null,
-                all_day: null,
-                allDay: null,
-        };
+	const normalized: CalendarEvent = {
+				id: String(event.id),
+				title: event.title ?? '',
+		description: event.description ?? event.notes ?? null,
+		start: event.start_at ?? '',
+		end,
+		type: 'medical',
+		category: 'medical',
+		location: event.location ?? null,
+		status: event.status ?? null,
+		exam_type: event.exam_type ?? null,
+		notes: event.notes ?? null,
+		all_day: null,
+		allDay: null,
+	};
 
         normalized.employee_id = event.employee_id ?? null;
         normalized.created_at = event.created_at ?? null;
@@ -699,4 +724,71 @@ export async function generateSchedule(
 		'Failed to generate schedule'
 	);
 	return response;
+}
+
+export async function createCalendarEvent(formData: FormData) {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    const endpoint = `${baseUrl}/calendar/events`;
+
+    // Convert datetime-local to ISO string with timezone
+    const startAt = formData.get('start_at') as string;
+    const endAt = formData.get('end_at') as string;
+
+    const payload: Record<string, unknown> = {
+        title: String(formData.get('title') ?? ''),
+        description: (formData.get('description') as string) || null,
+        start_at: startAt ? new Date(startAt).toISOString() : null,
+        end_at: endAt ? new Date(endAt).toISOString() : null,
+        category: (formData.get('category') as string) || null,
+        employee_id: (formData.get('employee_id') as string) || null,
+        location: (formData.get('location') as string) || null,
+        color: (formData.get('color') as string) || null,
+    };
+
+    await apiRequest(
+        endpoint,
+        {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        },
+        'Failed to create calendar event'
+    );
+
+    // Redirect back to calendars page after successful creation
+    redirect('/dashboard/admin/calendars');
+}
+
+export async function createMedicalEvent(formData: FormData) {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    const endpoint = `${baseUrl}/calendar/medical`;
+
+    // Convert datetime-local to ISO string with timezone
+    const startAt = formData.get('start_at') as string;
+    const endAt = formData.get('end_at') as string;
+
+    const payload: Record<string, unknown> = {
+        title: String(formData.get('title') ?? ''),
+        description: (formData.get('description') as string) || null,
+        start_at: startAt ? new Date(startAt).toISOString() : null,
+        end_at: endAt ? new Date(endAt).toISOString() : null,
+        employee_id: (formData.get('employee_id') as string) || null,
+        location: (formData.get('location') as string) || null,
+        exam_type: (formData.get('exam_type') as string) || null,
+        status: (formData.get('status') as string) || null,
+        notes: (formData.get('notes') as string) || null,
+    };
+
+    await apiRequest(
+        endpoint,
+        {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        },
+        'Failed to create medical event'
+    );
+
+    // Redirect back to calendars page after successful creation
+    redirect('/dashboard/admin/calendars');
 }
