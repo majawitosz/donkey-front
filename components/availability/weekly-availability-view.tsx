@@ -77,132 +77,124 @@ export default function WeeklyAvailabilityView({
 			</CardHeader>
 			<CardContent>
 				<div className='overflow-x-auto'>
-					<div className='min-w-[900px]'>
-						{/* Kalendarz w stylu Google Calendar */}
-						<div className='grid grid-cols-8 border rounded-lg overflow-hidden'>
-							{/* Pusta komórka dla nagłówka czasu */}
-							<div className='bg-muted border-r border-b p-2 text-xs font-semibold text-center'>
+					<div className='flex gap-2'>
+						{/* Kolumna z godzinami */}
+						<div className='flex-shrink-0 w-16'>
+							<div className='h-12 flex items-center justify-center text-xs font-semibold text-muted-foreground'>
 								Godzina
 							</div>
+							<div
+								className='relative'
+								style={{
+									height: `${hours.length * HOUR_HEIGHT}px`,
+								}}>
+								{hours.map((hour) => (
+									<div
+										key={hour}
+										className='absolute inset-x-0 border-t text-right pr-2 text-xs text-muted-foreground'
+										style={{
+											top: `${
+												(hour - 6) * HOUR_HEIGHT
+											}px`,
+											height: `${HOUR_HEIGHT}px`,
+										}}>
+										<div className='pt-1'>
+											{hour.toString().padStart(2, '0')}
+											:00
+										</div>
+									</div>
+								))}
+							</div>
+						</div>
 
-							{/* Nagłówki dni tygodnia */}
-							{weekDays.map((day, idx) => (
+						{/* Kolumny dla każdego dnia */}
+						{weekDays.map((day, dayIdx) => {
+							const slots = getSlotsForDay(day, availabilityData);
+							return (
 								<div
-									key={idx}
-									className='bg-muted border-r last:border-r-0 border-b p-2 text-center'>
-									<div className='font-semibold text-sm'>
-										{format(day, 'EEE', { locale: pl })}
-									</div>
-									<div className='text-xs text-muted-foreground'>
-										{format(day, 'd MMM', { locale: pl })}
-									</div>
-								</div>
-							))}
-
-							{/* Siatka godzin */}
-							{hours.map((hour) => (
-								<React.Fragment key={hour}>
-									{/* Kolumna z godziną */}
-									<div className='bg-muted/30 border-r border-b p-2 text-xs font-medium text-right text-muted-foreground'>
-										{hour.toString().padStart(2, '0')}:00
+									key={dayIdx}
+									className='flex-1 min-w-[120px]'>
+									{/* Nagłówek dnia */}
+									<div className='h-12 border rounded-t-lg bg-muted flex flex-col items-center justify-center'>
+										<div className='font-semibold text-sm'>
+											{format(day, 'EEE', { locale: pl })}
+										</div>
+										<div className='text-xs text-muted-foreground'>
+											{format(day, 'd MMM', {
+												locale: pl,
+											})}
+										</div>
 									</div>
 
-									{/* Kolumny dla każdego dnia */}
-									{weekDays.map((day, dayIdx) => {
-										const slots = getSlotsForDay(
-											day,
-											availabilityData
-										);
-										return (
+									{/* Obszar z dostępnością */}
+									<div
+										className='relative border border-t-0 rounded-b-lg bg-muted/20'
+										style={{
+											height: `${
+												hours.length * HOUR_HEIGHT
+											}px`,
+										}}>
+										{/* Linie godzinowe */}
+										{hours.map((hour) => (
 											<div
-												key={`${dayIdx}-${hour}`}
-												className='border-r last:border-r-0 border-b relative'
+												key={hour}
+												className='absolute inset-x-0 border-t border-border/50'
 												style={{
-													height: `${HOUR_HEIGHT}px`,
-												}}>
-												{/* Renderujemy bloki dostępności jako absolutnie pozycjonowane elementy */}
-												{slots.map((slot, slotIdx) => {
-													const topOffset =
-														timeToPixels(
-															slot.start
-														);
-													const bottomOffset =
-														timeToPixels(slot.end);
-													const slotHeight =
-														bottomOffset -
-														topOffset;
+													top: `${
+														(hour - 6) * HOUR_HEIGHT
+													}px`,
+												}}
+											/>
+										))}
 
-													// Sprawdzamy czy slot zaczyna się w tej godzinie
-													const [startHour] =
-														slot.start
-															.split(':')
-															.map(Number);
-													const [endHour] = slot.end
-														.split(':')
-														.map(Number);
+										{/* Bloki dostępności */}
+										{slots.map((slot, slotIdx) => {
+											const topOffset = timeToPixels(
+												slot.start
+											);
+											const bottomOffset = timeToPixels(
+												slot.end
+											);
+											const slotHeight =
+												bottomOffset - topOffset;
 
-													if (
-														startHour <= hour &&
-														endHour > hour
-													) {
-														// Obliczamy offset względem aktualnej godziny
-														const relativeTop =
-															startHour === hour
-																? topOffset %
-																  HOUR_HEIGHT
-																: 0;
-														const relativeHeight =
-															startHour === hour
-																? Math.min(
-																		slotHeight,
-																		HOUR_HEIGHT -
-																			relativeTop
-																  )
-																: endHour ===
-																  hour + 1
-																? bottomOffset %
-																		HOUR_HEIGHT ||
-																  HOUR_HEIGHT
-																: HOUR_HEIGHT;
-
-														return (
-															<div
-																key={slotIdx}
-																className='absolute inset-x-1 bg-green-500/80 dark:bg-green-600/70 rounded-sm border border-green-600 dark:border-green-500 flex items-center justify-center text-xs font-medium text-white'
-																style={{
-																	top: `${relativeTop}px`,
-																	height: `${relativeHeight}px`,
-																}}>
-																{startHour ===
-																	hour && (
-																	<span>
-																		{
-																			slot.start
-																		}{' '}
-																		-{' '}
-																		{
-																			slot.end
-																		}
-																	</span>
+											return (
+												<div
+													key={slotIdx}
+													className='absolute inset-x-1 bg-green-500/90 dark:bg-green-600/80 rounded-sm flex items-center justify-center text-white font-medium'
+													style={{
+														top: `${topOffset}px`,
+														height: `${slotHeight}px`,
+													}}>
+													{slotHeight > 30 && (
+														<div className='text-center text-xs'>
+															<div className='font-bold'>
+																{slot.start.substring(
+																	0,
+																	5
+																)}{' '}
+																-{' '}
+																{slot.end.substring(
+																	0,
+																	5
 																)}
 															</div>
-														);
-													}
-													return null;
-												})}
-											</div>
-										);
-									})}
-								</React.Fragment>
-							))}
-						</div>
+														</div>
+													)}
+												</div>
+											);
+										})}
+									</div>
+								</div>
+							);
+						})}
 					</div>
 				</div>
 
 				{/* Legenda */}
 				<div className='mt-4 flex items-center gap-4 text-sm'>
 					<div className='flex items-center gap-2'>
-						<div className='w-4 h-4 bg-green-500/80 dark:bg-green-600/70 rounded border border-green-600' />
+						<div className='w-4 h-4 bg-green-500/90 dark:bg-green-600/80 rounded' />
 						<span className='text-muted-foreground'>Dostępny</span>
 					</div>
 				</div>
