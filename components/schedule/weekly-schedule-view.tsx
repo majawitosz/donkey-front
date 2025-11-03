@@ -471,6 +471,85 @@ export default function WeeklyScheduleView({
 	scheduleData,
 	onScheduleUpdate,
 }: WeeklyScheduleViewProps) {
+	const [employeeNames, setEmployeeNames] = React.useState<
+		Record<string, string>
+	>({});
+
+	// Pobierz imiona i nazwiska wszystkich pracowników
+	React.useEffect(() => {
+		const fetchAllEmployeeNames = async () => {
+			const uniqueEmployeeIds = new Set<string>();
+			scheduleData.assignments.forEach((shift) => {
+				shift.assigned_employees_detail?.forEach((employee) => {
+					uniqueEmployeeIds.add(employee.employee_id);
+				});
+			});
+
+			const names: Record<string, string> = {};
+			for (const employeeId of uniqueEmployeeIds) {
+				try {
+					const details = await fetchEmployeeDetails(employeeId);
+					names[
+						employeeId
+					] = `${details.first_name} ${details.last_name}`;
+				} catch (error) {
+					console.error(
+						`Failed to fetch employee ${employeeId}:`,
+						error
+					);
+					names[employeeId] = 'Nieznany pracownik';
+				}
+			}
+			setEmployeeNames(names);
+		};
+
+		fetchAllEmployeeNames();
+	}, [scheduleData]);
+
+	// Oblicz podsumowanie godzin dla pracowników
+	const employeeHoursSummary = React.useMemo(() => {
+		const hoursMap = new Map<
+			string,
+			{ name: string; hours: number; employeeId: string }
+		>();
+
+		scheduleData.assignments.forEach((shift) => {
+			shift.assigned_employees_detail?.forEach((employee) => {
+				const employeeName =
+					employeeNames[employee.employee_id] || 'Ładowanie...';
+				const employeeId = employee.employee_id;
+
+				// Oblicz godziny dla tego pracownika w tej zmianie
+				let totalMinutes = 0;
+				employee.segments.forEach((segment) => {
+					const [startH, startM] = segment.start
+						.split(':')
+						.map(Number);
+					const [endH, endM] = segment.end.split(':').map(Number);
+					const startMinutes = startH * 60 + startM;
+					const endMinutes = endH * 60 + endM;
+					totalMinutes += endMinutes - startMinutes;
+				});
+
+				const hours = totalMinutes / 60;
+
+				if (hoursMap.has(employeeId)) {
+					const current = hoursMap.get(employeeId)!;
+					current.hours += hours;
+				} else {
+					hoursMap.set(employeeId, {
+						name: employeeName,
+						hours: hours,
+						employeeId,
+					});
+				}
+			});
+		});
+
+		return Array.from(hoursMap.values()).sort((a, b) =>
+			a.name.localeCompare(b.name, 'pl')
+		);
+	}, [scheduleData, employeeNames]);
 	const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
 	return (
@@ -573,14 +652,27 @@ export default function WeeklyScheduleView({
 			</div>
 
 			{/* Podsumowanie */}
-			{scheduleData.summary && (
-				<div className='mt-4 p-4 bg-muted/50 rounded-lg'>
-					<h4 className='font-semibold mb-2'>Podsumowanie</h4>
-					<pre className='text-xs'>
-						{JSON.stringify(scheduleData.summary, null, 2)}
-					</pre>
+
+			<div className='mt-4 p-4  rounded-lg'>
+				<h4 className='font-semibold mb-2'>Podsumowanie</h4>
+
+				{/* Podsumowanie godzin pracowników */}
+
+				<div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3'>
+					{employeeHoursSummary.map((employee) => (
+						<div
+							key={employee.employeeId}
+							className='flex items-center justify-between p-2  rounded border'>
+							<span className='text-sm font-medium'>
+								{employee.name}
+							</span>
+							<span className='text-sm text-muted-foreground'>
+								{employee.hours.toFixed(1)}h
+							</span>
+						</div>
+					))}
 				</div>
-			)}
+			</div>
 		</div>
 	);
 }

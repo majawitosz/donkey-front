@@ -37,7 +37,8 @@ export default function ScheduleGenerator() {
 				const dateFrom = format(currentWeekStart, 'yyyy-MM-dd');
 				const dateTo = format(currentWeekEnd, 'yyyy-MM-dd');
 
-				const result = await generateSchedule(dateFrom, dateTo);
+				// force: false - tylko załaduj istniejący grafik
+				const result = await generateSchedule(dateFrom, dateTo, false);
 
 				setGeneratedSchedule(result);
 				console.log('✅ Schedule loaded:', result);
@@ -67,7 +68,8 @@ export default function ScheduleGenerator() {
 			const dateFrom = format(currentWeekStart, 'yyyy-MM-dd');
 			const dateTo = format(currentWeekEnd, 'yyyy-MM-dd');
 
-			const result = await generateSchedule(dateFrom, dateTo);
+			// force: false - tylko załaduj istniejący grafik
+			const result = await generateSchedule(dateFrom, dateTo, false);
 
 			setGeneratedSchedule(result);
 			console.log('✅ Schedule refreshed:', result);
@@ -77,6 +79,38 @@ export default function ScheduleGenerator() {
 			setLoading(false);
 		}
 	}, [currentWeekStart, currentWeekEnd]);
+
+	// Funkcja do regenerowania grafiku (force: true)
+	const regenerateSchedule = React.useCallback(async () => {
+		setLoading(true);
+		try {
+			const dateFrom = format(currentWeekStart, 'yyyy-MM-dd');
+			const dateTo = format(currentWeekEnd, 'yyyy-MM-dd');
+
+			// force: true - wygeneruj ponownie od zera
+			const result = await generateSchedule(dateFrom, dateTo, true);
+
+			setGeneratedSchedule(result);
+			showAlert({
+				title: 'Sukces',
+				description: 'Grafik został wygenerowany ponownie',
+				variant: 'success',
+			});
+			console.log('✅ Schedule regenerated:', result);
+		} catch (error) {
+			console.error('❌ Error regenerating schedule:', error);
+			showAlert({
+				title: 'Błąd',
+				description:
+					error instanceof Error
+						? error.message
+						: 'Nie udało się wygenerować grafiku ponownie',
+				variant: 'error',
+			});
+		} finally {
+			setLoading(false);
+		}
+	}, [currentWeekStart, currentWeekEnd, showAlert]);
 
 	const handlePreviousWeek = () => {
 		setCurrentWeekStart((prev) => subWeeks(prev, 1));
@@ -139,6 +173,11 @@ export default function ScheduleGenerator() {
 								onClick={handleCurrentWeek}
 								disabled={loading}>
 								Obecny tydzień
+							</Button>
+							<Button
+								onClick={regenerateSchedule}
+								disabled={loading}>
+								Generuj ponownie
 							</Button>
 						</div>
 					</div>
