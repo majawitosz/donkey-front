@@ -1,0 +1,36 @@
+{
+	"Common": {
+		"dashboard": "Dashboard",
+		"employees": "Employees",
+		"schedule": "Schedule",
+		"settings": "Settings",
+		"logout": "Logout",
+		"login": "Login",
+		"loading": "Loading..."
+	},
+	"Sidebar": {
+		"home": "Home",
+		"positions": "Positions",
+		"availability": "Availability",
+		"demand": "Demand",
+		"schedule": "Schedule",
+		"calendars": "Calendars",
+		"application": "Application",
+		"employees": "Employees",
+		"workerPanel": "Worker panel"
+	},
+	"Admin": {
+		"addEmployee": "Add Employee",
+		"companyCode": "Company Code",
+		"generate": "Generate",
+		"employeesCount": "Employees Count",
+		"currentEmployeesCount": "Current employees count",
+		"addNewEmployee": "Add new employee",
+		"codeGeneratedSuccess": "Company code generated successfully",
+		"codeGenerateError": "Failed to generate code",
+		"loadError": "Error loading data",
+		"noCode": "No code",
+		"generateNewCode": "Generate new code",
+		"generateCode": "Generate code"
+	}
+}

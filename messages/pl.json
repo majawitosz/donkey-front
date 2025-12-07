@@ -1,0 +1,36 @@
+{
+	"Common": {
+		"dashboard": "Panel",
+		"employees": "Pracownicy",
+		"schedule": "Grafik",
+		"settings": "Ustawienia",
+		"logout": "Wyloguj",
+		"login": "Zaloguj",
+		"loading": "Ładowanie..."
+	},
+	"Sidebar": {
+		"home": "Strona główna",
+		"positions": "Stanowiska",
+		"availability": "Dostępność",
+		"demand": "Zapotrzebowanie",
+		"schedule": "Grafik",
+		"calendars": "Kalendarze",
+		"application": "Aplikacja",
+		"employees": "Pracownicy",
+		"workerPanel": "Panel pracownika"
+	},
+	"Admin": {
+		"addEmployee": "Dodaj pracownika",
+		"companyCode": "Kod firmy",
+		"generate": "Generuj",
+		"employeesCount": "Liczba pracowników",
+		"currentEmployeesCount": "Aktualna liczba pracowników",
+		"addNewEmployee": "Dodaj nowego pracownika",
+		"codeGeneratedSuccess": "Kod firmowy wygenerowany pomyślnie",
+		"codeGenerateError": "Nie udało się wygenerować kodu",
+		"loadError": "Błąd ładowania danych",
+		"noCode": "Brak kodu",
+		"generateNewCode": "Wygeneruj nowy kod",
+		"generateCode": "Wygeneruj kod"
+	}
+}

@@ -2,14 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import {
-	Card,
-	CardHeader,
-	CardTitle,
-	CardContent,
-	CardDescription,
-	CardFooter,
-} from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import {
@@ -17,17 +10,22 @@ import {
 	generateCompanyCode,
 	fetchEmployees,
 } from '@/lib/actions';
+import { EyeClosed, EyeIcon } from 'lucide-react';
 import { useAlert } from '@/providers/alert-provider';
 import type { components } from '@/lib/types/openapi';
+import { useTranslations } from 'next-intl';
 
 type CompanyCodeResponse = components['schemas']['CompanyCode'];
 
 export default function AddEmployeeSection() {
+	const t = useTranslations('Admin');
 	const [companyCode, setCompanyCode] = useState<CompanyCodeResponse | null>(
 		null
 	);
 	const [employeeCount, setEmployeeCount] = useState<number>(0);
 	const [loading, setLoading] = useState(false);
+	const [isDataLoading, setIsDataLoading] = useState(true);
+	const [showCode, setShowCode] = useState(false);
 	const { showAlert } = useAlert();
 
 	useEffect(() => {
@@ -43,7 +41,9 @@ export default function AddEmployeeSection() {
 			setCompanyCode(codeData);
 			setEmployeeCount(employees.length);
 		} catch (error) {
-			showAlert({ variant: 'error', title: 'Error loading data' });
+			showAlert({ variant: 'error', title: t('loadError') });
+		} finally {
+			setIsDataLoading(false);
 		}
 	};
 
@@ -54,12 +54,12 @@ export default function AddEmployeeSection() {
 			setCompanyCode(data);
 			showAlert({
 				variant: 'success',
-				title: 'Kod firmowy wygenerowany pomyślnie',
+				title: t('codeGeneratedSuccess'),
 			});
 		} catch (error) {
 			showAlert({
 				variant: 'error',
-				title: 'Nie udało się wygenerować kodu',
+				title: t('codeGenerateError'),
 			});
 		} finally {
 			setLoading(false);
@@ -67,45 +67,62 @@ export default function AddEmployeeSection() {
 	};
 
 	return (
-		<Card>
-			<CardHeader>
-				<CardTitle className='text-xl font-semibold tabular-nums @[250px]/card:text-3xl'>
-					Dodaj nowego pracownika
-				</CardTitle>
-			</CardHeader>
+		<Card className='w-[70%] lg:w-1/3 px-8 py-8'>
+			<div className='flex justify-between items-center'>
+				<div>
+					<h3 className='font-semibold text-base'>
+						{t('currentEmployeesCount')}
+					</h3>
+					<p className='text-sm font-semibold text-zinc-700'>
+						{t('addNewEmployee')}
+					</p>
+				</div>
+				<div className='text-6xl font-medium text-muted-foreground'>
+					{isDataLoading ? (
+						<Spinner className='h-12 w-12' />
+					) : (
+						employeeCount
+					)}
+				</div>
+			</div>
 
-			<CardContent>
-				<div className='space-y-4'>
-					<div>
-						<p className='text-sm font-medium'>Kod firmowy:</p>
-						<p className='text-lg font-mono bg-muted p-2 rounded'>
-							{companyCode?.company_code || 'Brak kodu'}
-						</p>
-					</div>
-					<div>
-						{loading ? (
-							<Button disabled size='sm'>
-								<Spinner />
-								Ładowanie...
-							</Button>
-						) : (
-							<Button onClick={handleGenerateCode}>
-								{companyCode
-									? 'Wygeneruj nowy kod'
-									: 'Wygeneruj kod'}
-							</Button>
-						)}
-					</div>
-				</div>
-			</CardContent>
-			<CardFooter className='flex-col items-start gap-1.5 text-sm'>
-				<div className='line-clamp-1 flex gap-2 font-medium'>
-					Aktualna liczba pracowników
-				</div>
-				<div className='text-2xl font-semibold tabular-nums @[250px]/card:text-3xl'>
-					{employeeCount}
-				</div>
-			</CardFooter>
+			<div className='flex items-center gap-3'>
+				<span className='font-semibold text-lg '>
+					{t('companyCode')}
+				</span>
+				{companyCode?.company_code ? (
+					showCode ? (
+						<>
+							<span className='text-3xl font-bold text-muted-foreground font-mono tracking-wide'>
+								{companyCode.company_code}
+							</span>
+							<button
+								onClick={() => setShowCode(false)}
+								className='hover:opacity-70 transition-opacity'>
+								<EyeClosed className='w-5 h-5' />
+							</button>
+						</>
+					) : (
+						<button
+							onClick={() => setShowCode(true)}
+							className='hover:opacity-70 transition-opacity'>
+							<EyeIcon className='w-5 h-5' />
+						</button>
+					)
+				) : (
+					<span className='text-sm text-muted-foreground'>
+						{t('noCode')}
+					</span>
+				)}
+			</div>
+
+			<Button
+				onClick={handleGenerateCode}
+				disabled={loading}
+				className='bg-black text-white hover:bg-black/90 w-1/2'>
+				{loading && <Spinner className='mr-2 h-4 w-4' />}
+				{companyCode ? t('generateNewCode') : t('generateCode')}
+			</Button>
 		</Card>
 	);
 }
