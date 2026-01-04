@@ -4,8 +4,10 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { registerAttendanceEvent } from '@/lib/actions';
 import { Loader2, MapPin } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export default function WebCheckIn() {
+    const t = useTranslations('Attendance');
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
     const [message, setMessage] = useState('');
@@ -17,7 +19,7 @@ export default function WebCheckIn() {
 
         if (!navigator.geolocation) {
             setStatus('error');
-            setMessage('Geolocation is not supported by your browser.');
+            setMessage(t('geolocationNotSupported'));
             setLoading(false);
             return;
         }
@@ -34,7 +36,7 @@ export default function WebCheckIn() {
 
                     if (result.success) {
                         setStatus('success');
-                        setMessage(`Pomyślnie ${type === 'check_in' ? 'rozpoczęto pracę' : 'zakończono pracę'}!`);
+                        setMessage(type === 'check_in' ? t('successStart') : t('successEnd'));
                     } else {
                         setStatus('error');
                         const errorDetail = result.error?.detail || result.error;
@@ -42,23 +44,23 @@ export default function WebCheckIn() {
                         if (errorDetail === 'Location is outside of workplace radius.') {
                             const distance = result.error?.distance ? Math.round(result.error.distance) : 'nieznana';
                             const radius = result.error?.radius ? Math.round(result.error.radius) : 'nieznany';
-                            setMessage(`Jesteś poza strefą pracy. Twoja odległość: ${distance}m, dozwolony promień: ${radius}m.`);
+                            setMessage(t('outsideZoneError', { distance, radius }));
                         } else if (errorDetail === 'Company location not configured.') {
-                            setMessage('Lokalizacja firmy nie została skonfigurowana. Skontaktuj się z administratorem.');
+                            setMessage(t('configError'));
                         } else {
-                            setMessage('Nie udało się zarejestrować obecności. Spróbuj ponownie.');
+                            setMessage(t('registerError'));
                         }
                     }
                 } catch (error) {
                     setStatus('error');
-                    setMessage('Wystąpił nieoczekiwany błąd. Spróbuj ponownie.');
+                    setMessage(t('unexpectedError'));
                 } finally {
                     setLoading(false);
                 }
             },
             (error) => {
                 setStatus('error');
-                setMessage(`Błąd lokalizacji: ${error.message}`);
+                setMessage(t('locationError', { message: error.message }));
                 setLoading(false);
             }
         );
@@ -66,7 +68,7 @@ export default function WebCheckIn() {
 
     return (
         <div className="p-4 border rounded-lg shadow-sm bg-card">
-            <h3 className="text-lg font-semibold mb-4">Rejestracja czasu pracy (Web)</h3>
+            <h3 className="text-lg font-semibold mb-4">{t('webCheckInTitle')}</h3>
             <div className="flex gap-4">
                 <Button 
                     onClick={() => handleCheckIn('check_in')} 
@@ -74,7 +76,7 @@ export default function WebCheckIn() {
                     className="bg-green-600 hover:bg-green-700 text-white"
                 >
                     {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MapPin className="mr-2 h-4 w-4" />}
-                    Start Pracy
+                    {t('startWork')}
                 </Button>
                 <Button 
                     onClick={() => handleCheckIn('check_out')} 
@@ -82,7 +84,7 @@ export default function WebCheckIn() {
                     variant="destructive"
                 >
                     {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MapPin className="mr-2 h-4 w-4" />}
-                    Koniec Pracy
+                    {t('endWork')}
                 </Button>
             </div>
             {message && (
@@ -91,7 +93,7 @@ export default function WebCheckIn() {
                 </div>
             )}
             <p className="text-xs text-muted-foreground mt-4">
-                Uwaga: Twoja lokalizacja zostanie zapisana. Upewnij się, że jesteś w strefie pracy.
+                {t('locationWarning')}
             </p>
         </div>
     );

@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, Circle, Marker, Popup, Polyline } from 'react-
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { AttendanceEvent, WorkplaceConfig } from '@/lib/actions';
+import { useTranslations } from 'next-intl';
 
 // Fix for default marker icon
 // @ts-ignore
@@ -20,21 +21,29 @@ interface AttendanceMapInnerProps {
 }
 
 export default function AttendanceMapInner({ event, workplaceConfig }: AttendanceMapInnerProps) {
+    const t = useTranslations('Attendance');
+
+    const officeLat = Number(workplaceConfig?.latitude);
+    const officeLng = Number(workplaceConfig?.longitude);
+    const eventLat = Number(event?.latitude);
+    const eventLng = Number(event?.longitude);
+    const radius = Number(workplaceConfig?.radius);
+
     if (
         !workplaceConfig ||
         !event ||
-        typeof workplaceConfig.latitude !== 'number' || 
-        typeof workplaceConfig.longitude !== 'number' ||
-        typeof event.latitude !== 'number' ||
-        typeof event.longitude !== 'number'
+        isNaN(officeLat) ||
+        isNaN(officeLng) ||
+        isNaN(eventLat) ||
+        isNaN(eventLng)
     ) {
-         return <div className="h-[400px] flex items-center justify-center bg-muted rounded-lg text-muted-foreground">Invalid location data</div>;
+         return <div className="h-[400px] flex items-center justify-center bg-muted rounded-lg text-muted-foreground">{t('invalidLocationData')}</div>;
     }
 
-    const officePos: [number, number] = [workplaceConfig.latitude, workplaceConfig.longitude];
-    const eventPos: [number, number] = [event.latitude, event.longitude];
+    const officePos: [number, number] = [officeLat, officeLng];
+    const eventPos: [number, number] = [eventLat, eventLng];
     
-    const isInside = L.latLng(eventPos).distanceTo(L.latLng(officePos)) <= workplaceConfig.radius;
+    const isInside = L.latLng(eventPos).distanceTo(L.latLng(officePos)) <= radius;
 
     return (
         <MapContainer
@@ -50,18 +59,19 @@ export default function AttendanceMapInner({ event, workplaceConfig }: Attendanc
             {/* Office Zone */}
             <Circle
                 center={officePos}
-                radius={workplaceConfig.radius}
+                radius={radius}
                 pathOptions={{ color: 'blue', fillColor: 'blue', fillOpacity: 0.1 }}
             />
             <Marker position={officePos}>
-                <Popup>Office</Popup>
+                <Popup>{t('workplaceLocation')}</Popup>
             </Marker>
 
             {/* Event Location */}
             <Marker position={eventPos}>
                 <Popup>
-                    {event.type === 'check_in' ? 'Check In' : 'Check Out'} <br />
-                    Status: {isInside ? 'Inside Zone' : 'Outside Zone'}
+                    {event.type === 'check_in' ? t('checkIn') : t('checkOut')} <br />
+                    {t('distance')}: {Math.round(L.latLng(eventPos).distanceTo(L.latLng(officePos)))}m <br />
+                    Status: {isInside ? t('insideZone') : t('outsideZone')}
                 </Popup>
             </Marker>
 

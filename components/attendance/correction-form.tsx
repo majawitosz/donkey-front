@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { submitAttendanceCorrection } from '@/lib/actions';
 import { Loader2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 const formSchema = z.object({
     timestamp: z.string().min(1, 'Time is required'),
@@ -18,6 +19,7 @@ const formSchema = z.object({
 });
 
 export default function CorrectionForm() {
+    const t = useTranslations('Attendance');
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
 
@@ -44,11 +46,11 @@ export default function CorrectionForm() {
 
     return (
         <div className="p-4 border rounded-lg shadow-sm bg-card">
-            <h3 className="text-lg font-semibold mb-4">Request Correction</h3>
+            <h3 className="text-lg font-semibold mb-4">{t('requestCorrection')}</h3>
             {success ? (
                 <div className="bg-green-100 text-green-800 p-4 rounded mb-4">
-                    Correction request submitted successfully!
-                    <Button variant="link" onClick={() => setSuccess(false)} className="ml-2 p-0 h-auto">Submit another</Button>
+                    {t('correctionSuccess')}
+                    <Button variant="link" onClick={() => setSuccess(false)} className="ml-2 p-0 h-auto">{t('submitAnother')}</Button>
                 </div>
             ) : (
                 <Form {...form}>
@@ -58,16 +60,16 @@ export default function CorrectionForm() {
                             name="type"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Type</FormLabel>
+                                    <FormLabel>{t('type')}</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl>
                                             <SelectTrigger>
-                                                <SelectValue placeholder="Select type" />
+                                                <SelectValue placeholder={t('selectType')} />
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            <SelectItem value="check_in">Check In</SelectItem>
-                                            <SelectItem value="check_out">Check Out</SelectItem>
+                                            <SelectItem value="check_in">{t('checkIn')}</SelectItem>
+                                            <SelectItem value="check_out">{t('checkOut')}</SelectItem>
                                         </SelectContent>
                                     </Select>
                                     <FormMessage />
@@ -79,7 +81,7 @@ export default function CorrectionForm() {
                             name="timestamp"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Time</FormLabel>
+                                    <FormLabel>{t('time')}</FormLabel>
                                     <FormControl>
                                         <Input type="datetime-local" {...field} />
                                     </FormControl>
@@ -92,19 +94,19 @@ export default function CorrectionForm() {
                             name="reason"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Reason</FormLabel>
+                                    <FormLabel>{t('reason')}</FormLabel>
                                     <Select onValueChange={field.onChange} defaultValue={field.value}>
                                         <FormControl>
                                             <SelectTrigger>
-                                                <SelectValue placeholder="Select reason" />
+                                                <SelectValue placeholder={t('selectReason')} />
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            <SelectItem value="gps_error">GPS Error</SelectItem>
-                                            <SelectItem value="no_phone">No Phone / Battery Dead</SelectItem>
-                                            <SelectItem value="remote_work">Remote Work / Other Location</SelectItem>
-                                            <SelectItem value="forgot">Forgot to Check In/Out</SelectItem>
-                                            <SelectItem value="other">Other</SelectItem>
+                                            <SelectItem value="gps_error">{t('gpsError')}</SelectItem>
+                                            <SelectItem value="no_phone">{t('noPhone')}</SelectItem>
+                                            <SelectItem value="remote_work">{t('remoteWork')}</SelectItem>
+                                            <SelectItem value="forgot">{t('forgot')}</SelectItem>
+                                            <SelectItem value="other">{t('other')}</SelectItem>
                                         </SelectContent>
                                     </Select>
                                     <FormMessage />
@@ -113,7 +115,7 @@ export default function CorrectionForm() {
                         />
                         <Button type="submit" disabled={loading}>
                             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Submit Request
+                            {t('submitRequest')}
                         </Button>
                     </form>
                 </Form>
