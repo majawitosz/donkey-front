@@ -11,6 +11,7 @@ import {
 	CalendarCog,
 	CalendarPlus,
 	CalendarRange,
+	Clock,
 } from 'lucide-react';
 import {
 	Sidebar,
@@ -74,6 +75,16 @@ export function AppSidebar() {
 			title: t('calendars'),
 			url: '/dashboard/admin/calendars',
 			icon: CalendarRange,
+		},
+		{
+			title: t('attendance'),
+			url: '/dashboard/attendance',
+			icon: Clock,
+		},
+		{
+			title: t('settings'),
+			url: '/dashboard/admin/settings',
+			icon: Settings,
 		},
 	];
 

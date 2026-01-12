@@ -244,15 +244,26 @@ async function apiRequest<T>(
 
 	if (!response.ok) {
 		console.error(`${errorMessage}:`, response.status, response.statusText);
+		let errorData;
 		try {
 			const errorText = await response.text();
 			console.error('Response body:', errorText);
+			try {
+				errorData = JSON.parse(errorText);
+			} catch {
+				errorData = errorText;
+			}
 		} catch (error) {
 			console.error('Could not read response body', error);
 		}
-		throw new Error(
+		const error = new Error(
 			`${errorMessage}: ${response.status} ${response.statusText}`
 		);
+		// @ts-ignore
+		error.data = errorData;
+		// @ts-ignore
+		error.status = response.status;
+		throw error;
 	}
 
 	if (response.status === 204) {
@@ -843,3 +854,135 @@ export async function createMedicalEvent(formData: FormData) {
 	// Redirect back to calendars page after successful creation
 	redirect('/dashboard/admin/calendars');
 }
+
+// Attendance API Types
+export interface WorkplaceConfig {
+	latitude: number;
+	longitude: number;
+	radius: number;
+}
+
+export interface AttendanceEvent {
+	id: string;
+	timestamp: string;
+	type: 'check_in' | 'check_out';
+	latitude: number;
+	longitude: number;
+	is_correction?: boolean;
+	correction_reason?: string;
+	status?: string;
+}
+
+export interface AttendanceStatus {
+	is_working: boolean;
+	last_activity: string | null;
+}
+
+// Attendance API Functions
+
+export async function getWorkplaceConfig(): Promise<WorkplaceConfig | null> {
+	try {
+		return await apiRequest<WorkplaceConfig>(
+			'workplace/config/',
+			{
+				method: 'GET',
+			},
+			'Failed to fetch workplace config'
+		);
+	} catch (error) {
+		console.error('Failed to fetch workplace config:', error);
+		return null;
+	}
+}
+
+export async function registerAttendanceEvent(data: {
+	type: 'check_in' | 'check_out';
+	latitude: number;
+	longitude: number;
+	source?: 'web' | 'mobile';
+}) {
+	const payload = {
+		...data,
+		timestamp: new Date().toISOString(),
+		latitude: parseFloat(data.latitude.toFixed(6)),
+		longitude: parseFloat(data.longitude.toFixed(6)),
+	};
+
+	try {
+		const response = await apiRequest(
+			'attendance/event/',
+			{
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(payload),
+			},
+			'Failed to register attendance event'
+		);
+		return { success: true, data: response };
+	} catch (error: any) {
+		return { success: false, error: error.data || error.message };
+	}
+}
+
+export async function getAttendanceStatus(): Promise<AttendanceStatus | null> {
+	try {
+		return await apiRequest<AttendanceStatus>(
+			'attendance/status/',
+			{
+				method: 'GET',
+			},
+			'Failed to fetch attendance status'
+		);
+	} catch (error) {
+		console.error('Failed to fetch attendance status:', error);
+		return null;
+	}
+}
+
+export async function getAttendanceHistory(): Promise<AttendanceEvent[]> {
+	try {
+		// Assuming endpoint exists based on user request context
+		return await apiRequest<AttendanceEvent[]>(
+			'attendance/history/',
+			{
+				method: 'GET',
+			},
+			'Failed to fetch attendance history'
+		);
+	} catch (error) {
+		console.error('Failed to fetch attendance history:', error);
+		return [];
+	}
+}
+
+export async function submitAttendanceCorrection(data: {
+	timestamp: string;
+	type: 'check_in' | 'check_out';
+	reason: string;
+	latitude?: number;
+	longitude?: number;
+}) {
+	return await apiRequest(
+		'attendance/correction/',
+		{
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(data),
+		},
+		'Failed to submit attendance correction'
+	);
+}
+
+export async function saveWorkplaceConfig(data: WorkplaceConfig) {
+	return await apiRequest(
+		'workplace/config/',
+		{
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(data),
+		},
+		'Failed to save workplace config'
+	);
+}
+
+
