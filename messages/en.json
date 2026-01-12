@@ -1,4 +1,11 @@
 {
+	"Home": {
+		"welcome": "Welcome to DoneKey",
+		"chooseWay": "Choose your way",
+		"signUpBusiness": "Sign Up Your Business",
+		"signUpWorker": "Sign Up as Worker",
+		"login": "Log in"
+	},
 	"Common": {
 		"dashboard": "Dashboard",
 		"employees": "Employees",
@@ -6,6 +13,7 @@
 		"settings": "Settings",
 		"logout": "Logout",
 		"login": "Login",
+		"register": "Register",
 		"loading": "Loading..."
 	},
 	"Sidebar": {
@@ -15,7 +23,6 @@
 		"demand": "Demand",
 		"schedule": "Schedule",
 		"calendars": "Calendars",
-		"application": "Application",
 		"employees": "Employees",
 		"workerPanel": "Worker panel"
 	},
@@ -32,5 +39,88 @@
 		"noCode": "No code",
 		"generateNewCode": "Generate new code",
 		"generateCode": "Generate code"
+	},
+	"Auth": {
+		"login": {
+			"title": "Login to your account",
+			"description": "Enter your email below to login to your account",
+			"submit": "Login",
+			"google": "Login with Google",
+			"forgotPassword": "Forgot your password?",
+			"signUpLink": "Sign Up",
+			"failed": "Login failed",
+			"email": "Email",
+			"password": "Password"
+		},
+		"signup": {
+			"businessTitle": "Sign Up Your Business",
+			"workerTitle": "Sign Up as a Worker",
+			"description": "Enter your data below to sign up",
+			"alreadyHaveAccount": "Already have an account",
+			"submit": "Sign Up",
+			"google": "Sign Up with Google",
+			"companyName": "Company Name",
+			"firstName": "First Name",
+			"lastName": "Last Name",
+			"nip": "NIP",
+			"email": "Email",
+			"password": "Password",
+			"companyCode": "Company Code",
+			"howToGetCode": "How do I get a company code?",
+			"contactOwner": "Contact your company owner"
+		},
+		"validation": {
+			"required": "This field is required",
+			"emailInvalid": "Invalid email address",
+			"passwordLength": "Password must be at least 8 characters",
+			"passwordUppercase": "Password must contain at least 1 uppercase letter",
+			"passwordNumber": "Password must contain at least 1 number",
+			"passwordSpecial": "Password must contain at least 1 special character (@$!%*?&)",
+			"minLength": "Must be at least 2 characters",
+			"maxLength": "Name too long",
+			"nipLength": "NIP must be exactly 10 digits",
+			"companyCodeLength": "Company code must be at least 2 characters"
+		}
+	},
+	"EmployeesTable": {
+		"email": "Email",
+		"firstName": "First Name",
+		"lastName": "Last Name",
+		"role": "Role",
+		"createdAt": "Created At",
+		"positionName": "Position Name",
+		"experienceYears": "Experience Years",
+		"notes": "Notes",
+		"actions": "Actions",
+		"openMenu": "Open menu",
+		"copyId": "Copy employee ID",
+		"viewEmployee": "View employee",
+		"editEmployee": "Edit employee",
+		"searchPlaceholder": "Search...",
+		"columns": "Columns",
+		"noResults": "No results.",
+		"rowsTotal": "row(s) total.",
+		"previous": "Previous",
+		"next": "Next",
+		"pickDate": "Pick a date"
+	},
+	"Positions": {
+		"title": "Positions",
+		"description": "Manage positions in your company",
+		"addPosition": "Add position",
+		"editPosition": "Edit position",
+		"changeName": "Change position name.",
+		"enterName": "Enter new position name.",
+		"name": "Name",
+		"namePlaceholder": "Position name",
+		"cancel": "Cancel",
+		"save": "Save",
+		"add": "Add",
+		"createdAt": "Created At",
+		"actions": "Actions",
+		"noPositions": "No positions",
+		"areYouSure": "Are you sure?",
+		"deleteWarning": "This action is irreversible. It will permanently delete the position \"{name}\".",
+		"delete": "Delete"
 	}
 }

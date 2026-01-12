@@ -4,14 +4,10 @@
 import {
 	Calendar,
 	Home,
-	Search,
-	Settings,
 	User2,
 	UserSearch,
 	IdCardLanyard,
 	GalleryVerticalEnd,
-	AudioWaveform,
-	Command,
 	CalendarCog,
 	CalendarPlus,
 	CalendarRange,
@@ -22,7 +18,6 @@ import {
 	SidebarFooter,
 	SidebarGroup,
 	SidebarGroupContent,
-	SidebarGroupLabel,
 	SidebarHeader,
 	SidebarMenu,
 	SidebarMenuButton,
@@ -34,32 +29,20 @@ import { NavUser } from './nav-user';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/navigation';
 
-const teams = [
-	{
-		name: 'Acme Inc',
-		logo: GalleryVerticalEnd,
-		plan: 'Enterprise',
-	},
-	{
-		name: 'Acme Corp.',
-		logo: AudioWaveform,
-		plan: 'Startup',
-	},
-	{
-		name: 'Evil Corp.',
-		logo: Command,
-		plan: 'Free',
-	},
-];
-
 export function AppSidebar() {
 	const t = useTranslations('Sidebar');
 	const { user, isOwner, isEmployee, isManager } = useUser();
 	const navUser = {
 		name: user ? user.full_name : '',
 		email: user ? user.email : '',
-		avatar: 'https://i.pinimg.com/736x/5d/df/7f/5ddf7f72c2c0d387f0d1985154b171f5.jpg',
+		//avatar: 'https://i.pinimg.com/736x/5d/df/7f/5ddf7f72c2c0d387f0d1985154b171f5.jpg',
 	};
+	const teams = [
+		{
+			name: user ? user.company_name : '',
+			logo: GalleryVerticalEnd,
+		},
+	];
 
 	const data = [
 		{
@@ -101,7 +84,6 @@ export function AppSidebar() {
 			</SidebarHeader>
 			<SidebarContent>
 				<SidebarGroup>
-					<SidebarGroupLabel>{t('application')}</SidebarGroupLabel>
 					<SidebarGroupContent>
 						<SidebarMenu>
 							{data.map((item) => (

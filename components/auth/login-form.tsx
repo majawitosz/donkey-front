@@ -19,15 +19,17 @@ import {
 	FormMessage,
 } from '@/components/ui/form';
 import { Input } from '../ui/input';
-import Link from 'next/link';
+import { Link } from '@/i18n/navigation';
 import { useForm } from 'react-hook-form';
 import { Credentials } from '@/lib/definitions/user';
 import { authenticate } from '@/lib/actions';
 import { useActionState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAlert } from '@/providers/alert-provider';
+import { useTranslations } from 'next-intl';
 
 export default function Login() {
+	const t = useTranslations('Auth.login');
 	const searchParams = useSearchParams();
 	const { showAlert } = useAlert();
 	const prefillEmail = searchParams.get('email') ?? '';
@@ -45,26 +47,24 @@ export default function Login() {
 		if (errorMessage) {
 			showAlert({
 				variant: 'error',
-				title: 'Login failed',
+				title: t('failed'),
 				description: errorMessage,
 			});
 		}
-	}, [errorMessage, showAlert]);
+	}, [errorMessage, showAlert, t]);
 
 	return (
 		<Form {...form}>
 			<form
 				action={formAction}
-				className='flex w-full justify-center min-h-screen items-center'>
+				className='flex w-full justify-center flex-1 items-center'>
 				<Card className='w-full max-w-sm'>
 					<CardHeader>
-						<CardTitle>Login to your account</CardTitle>
-						<CardDescription>
-							Enter your email below to login to your account
-						</CardDescription>
+						<CardTitle>{t('title')}</CardTitle>
+						<CardDescription>{t('description')}</CardDescription>
 						<CardAction>
 							<Button variant='link'>
-								<Link href='/'>Sign Up</Link>
+								<Link href='/signup'>{t('signUpLink')}</Link>
 							</Button>
 						</CardAction>
 					</CardHeader>
@@ -76,7 +76,7 @@ export default function Login() {
 									name='email'
 									render={({ field }) => (
 										<FormItem>
-											<FormLabel>Email</FormLabel>
+											<FormLabel>{t('email')}</FormLabel>
 											<FormControl>
 												<Input
 													placeholder='m@example.com'
@@ -97,11 +97,13 @@ export default function Login() {
 									render={({ field }) => (
 										<FormItem>
 											<div className='flex items-center'>
-												<FormLabel>Password</FormLabel>
+												<FormLabel>
+													{t('password')}
+												</FormLabel>
 												<a
 													href='#'
 													className='ml-auto inline-block text-sm underline-offset-4 hover:underline'>
-													Forgot your password?
+													{t('forgotPassword')}
 												</a>
 											</div>
 											<FormControl>
@@ -124,10 +126,10 @@ export default function Login() {
 							type='submit'
 							className='w-full'
 							aria-disabled={isPending}>
-							Login
+							{t('submit')}
 						</Button>
 						<Button variant='outline' className='w-full'>
-							Login with Google
+							{t('google')}
 						</Button>
 					</CardFooter>
 				</Card>

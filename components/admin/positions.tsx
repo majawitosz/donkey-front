@@ -49,10 +49,12 @@ import {
 } from '@/components/ui/card';
 import type { components } from '@/lib/types/openapi';
 import { Spinner } from '../ui/spinner';
+import { useTranslations } from 'next-intl';
 
 type Position = components['schemas']['Position'];
 
 export default function PositionsPage() {
+	const t = useTranslations('Positions');
 	const [positions, setPositions] = React.useState<Position[]>([]);
 	const [loading, setLoading] = React.useState(true);
 	const [dialogOpen, setDialogOpen] = React.useState(false);
@@ -138,42 +140,40 @@ export default function PositionsPage() {
 	return (
 		<Card>
 			<CardHeader>
-				<CardTitle>Stanowiska</CardTitle>
-				<CardDescription>
-					Zarządzaj stanowiskami w Twojej firmie
-				</CardDescription>
+				<CardTitle>{t('title')}</CardTitle>
+				<CardDescription>{t('description')}</CardDescription>
 
 				<Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
 					<DialogTrigger asChild>
 						<Button onClick={openCreateDialog}>
 							<Plus className='mr-2 h-4 w-4' />
-							Dodaj stanowisko
+							{t('addPosition')}
 						</Button>
 					</DialogTrigger>
 					<DialogContent className='sm:max-w-[425px]'>
 						<DialogHeader>
 							<DialogTitle>
 								{editingPosition
-									? 'Edytuj stanowisko'
-									: 'Dodaj stanowisko'}
+									? t('editPosition')
+									: t('addPosition')}
 							</DialogTitle>
 							<DialogDescription>
 								{editingPosition
-									? 'Zmień nazwę stanowiska.'
-									: 'Wprowadź nazwę nowego stanowiska.'}
+									? t('changeName')
+									: t('enterName')}
 							</DialogDescription>
 						</DialogHeader>
 						<div className='grid gap-4 py-4'>
 							<div className='grid grid-cols-4 items-center gap-4'>
 								<Label htmlFor='name' className='text-right'>
-									Nazwa
+									{t('name')}
 								</Label>
 								<Input
 									id='name'
 									value={name}
 									onChange={(e) => setName(e.target.value)}
 									className='col-span-3'
-									placeholder='Nazwa stanowiska'
+									placeholder={t('namePlaceholder')}
 								/>
 							</div>
 						</div>
@@ -182,7 +182,7 @@ export default function PositionsPage() {
 								type='button'
 								variant='outline'
 								onClick={closeDialog}>
-								Anuluj
+								{t('cancel')}
 							</Button>
 							<Button
 								type='button'
@@ -192,7 +192,7 @@ export default function PositionsPage() {
 										: handleCreate
 								}
 								disabled={!name.trim()}>
-								{editingPosition ? 'Zapisz' : 'Dodaj'}
+								{editingPosition ? t('save') : t('add')}
 							</Button>
 						</DialogFooter>
 					</DialogContent>
@@ -203,16 +203,18 @@ export default function PositionsPage() {
 				<Table>
 					<TableHeader>
 						<TableRow>
-							<TableHead>Nazwa</TableHead>
-							<TableHead>Data utworzenia</TableHead>
-							<TableHead className='text-right'>Akcje</TableHead>
+							<TableHead>{t('name')}</TableHead>
+							<TableHead>{t('createdAt')}</TableHead>
+							<TableHead className='text-right'>
+								{t('actions')}
+							</TableHead>
 						</TableRow>
 					</TableHeader>
 					<TableBody>
 						{positions.length === 0 ? (
 							<TableRow>
 								<TableCell colSpan={4} className='text-center'>
-									Brak stanowisk
+									{t('noPositions')}
 								</TableCell>
 							</TableRow>
 						) : (
@@ -245,19 +247,17 @@ export default function PositionsPage() {
 											<AlertDialogContent>
 												<AlertDialogHeader>
 													<AlertDialogTitle>
-														Czy na pewno?
+														{t('areYouSure')}
 													</AlertDialogTitle>
 													<AlertDialogDescription>
-														Ta akcja jest
-														nieodwracalna. Spowoduje
-														trwałe usunięcie
-														stanowiska "
-														{position.name}".
+														{t('deleteWarning', {
+															name: position.name,
+														})}
 													</AlertDialogDescription>
 												</AlertDialogHeader>
 												<AlertDialogFooter>
 													<AlertDialogCancel>
-														Anuluj
+														{t('cancel')}
 													</AlertDialogCancel>
 													<AlertDialogAction
 														onClick={() =>
@@ -265,7 +265,7 @@ export default function PositionsPage() {
 																position.id
 															)
 														}>
-														Usuń
+														{t('delete')}
 													</AlertDialogAction>
 												</AlertDialogFooter>
 											</AlertDialogContent>

@@ -35,7 +35,7 @@ export function NavUser({
 	user: {
 		name: string;
 		email: string;
-		avatar: string;
+		avatar?: string;
 	};
 }) {
 	const { isMobile } = useSidebar();
@@ -54,7 +54,7 @@ export function NavUser({
 									alt={user.name}
 								/>
 								<AvatarFallback className='rounded-lg'>
-									CN
+									JK
 								</AvatarFallback>
 							</Avatar>
 							<div className='grid flex-1 text-left text-sm leading-tight'>

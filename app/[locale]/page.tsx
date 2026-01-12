@@ -8,36 +8,41 @@ import {
 	CardHeader,
 	CardTitle,
 } from '@/components/ui/card';
-import Link from 'next/link';
-import { ModeToggle } from '@/components/ui/theme-toggler';
+import { Link } from '@/i18n/navigation';
+import Image from 'next/image';
+import { PublicHeader } from '@/components/ui/public-header';
+import { useTranslations } from 'next-intl';
 
 export default function Home() {
+	const t = useTranslations('Home');
+	const tCommon = useTranslations('Common');
+
 	return (
-		<div>
-			<ModeToggle />
-			<div className='flex w-full justify-center min-h-screen items-center'>
+		<div className='flex min-h-screen flex-col'>
+			<PublicHeader />
+			<div className='flex w-full justify-center flex-1 items-center'>
 				<Card className='w-full max-w-sm h-1/2'>
 					<CardHeader>
-						<CardTitle>Welcome to DoneKey</CardTitle>
-						<CardDescription>Choose your way</CardDescription>
+						<CardTitle>{t('welcome')}</CardTitle>
+						<CardDescription>{t('chooseWay')}</CardDescription>
 					</CardHeader>
 					<CardContent>
 						<div className='flex flex-col justify-between gap-5'>
 							<Button className='w-full' asChild>
 								<Link href='/signup'>
-									Sign Up Your Buisness
+									{t('signUpBusiness')}
 								</Link>
 							</Button>
 							<Button className='w-full' asChild>
 								<Link href='/signup-worker'>
-									Sign Up as Worker
+									{t('signUpWorker')}
 								</Link>
 							</Button>
 							<Button
 								variant='outline'
 								className='w-full'
 								asChild>
-								<Link href='/login'>Login</Link>
+								<Link href='/login'>{t('login')}</Link>
 							</Button>
 						</div>
 					</CardContent>

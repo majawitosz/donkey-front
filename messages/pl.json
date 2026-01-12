@@ -1,4 +1,11 @@
 {
+	"Home": {
+		"welcome": "Witaj w DoneKey",
+		"chooseWay": "Wybierz swoją drogę",
+		"signUpBusiness": "Zarejestruj firmę",
+		"signUpWorker": "Zarejestruj się jako pracownik",
+		"login": "Zaloguj się"
+	},
 	"Common": {
 		"dashboard": "Panel",
 		"employees": "Pracownicy",
@@ -6,6 +13,7 @@
 		"settings": "Ustawienia",
 		"logout": "Wyloguj",
 		"login": "Zaloguj",
+		"register": "Rejestracja",
 		"loading": "Ładowanie..."
 	},
 	"Sidebar": {
@@ -15,7 +23,6 @@
 		"demand": "Zapotrzebowanie",
 		"schedule": "Grafik",
 		"calendars": "Kalendarze",
-		"application": "Aplikacja",
 		"employees": "Pracownicy",
 		"workerPanel": "Panel pracownika"
 	},
@@ -32,5 +39,88 @@
 		"noCode": "Brak kodu",
 		"generateNewCode": "Wygeneruj nowy kod",
 		"generateCode": "Wygeneruj kod"
+	},
+	"Auth": {
+		"login": {
+			"title": "Zaloguj się",
+			"description": "Wprowadź swój email poniżej, aby się zalogować",
+			"submit": "Zaloguj",
+			"google": "Zaloguj przez Google",
+			"forgotPassword": "Nie pamiętasz hasła?",
+			"signUpLink": "Zarejestruj się",
+			"failed": "Logowanie nieudane",
+			"email": "Email",
+			"password": "Hasło"
+		},
+		"signup": {
+			"businessTitle": "Zarejestruj swoją firmę",
+			"workerTitle": "Zarejestruj się jako pracownik",
+			"description": "Wprowadź swoje dane poniżej, aby się zarejestrować",
+			"alreadyHaveAccount": "Masz już konto?",
+			"submit": "Zarejestruj się",
+			"google": "Zarejestruj przez Google",
+			"companyName": "Nazwa firmy",
+			"firstName": "Imię",
+			"lastName": "Nazwisko",
+			"nip": "NIP",
+			"email": "Email",
+			"password": "Hasło",
+			"companyCode": "Kod firmy",
+			"howToGetCode": "Jak zdobyć kod firmy?",
+			"contactOwner": "Skontaktuj się z właścicielem firmy"
+		},
+		"validation": {
+			"required": "To pole jest wymagane",
+			"emailInvalid": "Nieprawidłowy adres email",
+			"passwordLength": "Hasło musi mieć co najmniej 8 znaków",
+			"passwordUppercase": "Hasło musi zawierać co najmniej 1 wielką literę",
+			"passwordNumber": "Hasło musi zawierać co najmniej 1 cyfrę",
+			"passwordSpecial": "Hasło musi zawierać co najmniej 1 znak specjalny (@$!%*?&)",
+			"minLength": "Musi mieć co najmniej 2 znaki",
+			"maxLength": "Zbyt długa nazwa",
+			"nipLength": "NIP musi składać się z dokładnie 10 cyfr",
+			"companyCodeLength": "Kod firmy musi mieć co najmniej 2 znaki"
+		}
+	},
+	"EmployeesTable": {
+		"email": "Email",
+		"firstName": "Imię",
+		"lastName": "Nazwisko",
+		"role": "Rola",
+		"createdAt": "Utworzono",
+		"positionName": "Stanowisko",
+		"experienceYears": "Lata doświadczenia",
+		"notes": "Notatki",
+		"actions": "Akcje",
+		"openMenu": "Otwórz menu",
+		"copyId": "Skopiuj ID pracownika",
+		"viewEmployee": "Zobacz pracownika",
+		"editEmployee": "Edytuj pracownika",
+		"searchPlaceholder": "Szukaj...",
+		"columns": "Kolumny",
+		"noResults": "Brak wyników.",
+		"rowsTotal": "wierszy łącznie.",
+		"previous": "Poprzednia",
+		"next": "Następna",
+		"pickDate": "Wybierz datę"
+	},
+	"Positions": {
+		"title": "Stanowiska",
+		"description": "Zarządzaj stanowiskami w Twojej firmie",
+		"addPosition": "Dodaj stanowisko",
+		"editPosition": "Edytuj stanowisko",
+		"changeName": "Zmień nazwę stanowiska.",
+		"enterName": "Wprowadź nazwę nowego stanowiska.",
+		"name": "Nazwa",
+		"namePlaceholder": "Nazwa stanowiska",
+		"cancel": "Anuluj",
+		"save": "Zapisz",
+		"add": "Dodaj",
+		"createdAt": "Data utworzenia",
+		"actions": "Akcje",
+		"noPositions": "Brak stanowisk",
+		"areYouSure": "Czy na pewno?",
+		"deleteWarning": "Ta akcja jest nieodwracalna. Spowoduje trwałe usunięcie stanowiska \"{name}\".",
+		"delete": "Usuń"
 	}
 }

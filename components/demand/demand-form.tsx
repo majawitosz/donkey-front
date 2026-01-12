@@ -307,7 +307,7 @@ export default function DemandForm() {
 								<ChevronRight className='h-4 w-4' />
 							</Button>
 						</div>
-						<div className='flex justify-center mb-4'>
+						<div className='flex justify-center mb-4 gap-2'>
 							<Button
 								type='button'
 								variant={isCurrentWeek ? 'outline' : 'default'}
@@ -315,6 +315,13 @@ export default function DemandForm() {
 								onClick={handleCurrentWeek}
 								disabled={isCurrentWeek}>
 								Obecny tydzień
+							</Button>
+							<Button
+								type='button'
+								variant='outline'
+								size='sm'
+								onClick={() => {}}>
+								Ustaw jako domyślne
 							</Button>
 						</div>
 					</div>
