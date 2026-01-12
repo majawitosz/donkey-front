@@ -12,6 +12,7 @@ import {
 	CalendarPlus,
 	CalendarRange,
 	Clock,
+	Settings,
 } from 'lucide-react';
 import {
 	Sidebar,

@@ -22,6 +22,7 @@ type CompanyCodeResponse = components['schemas']['CompanyCode'];
 type CalendarEventOut = components['schemas']['CalendarEventOut'];
 type MedicalEventOut = components['schemas']['MedicalEventOut'];
 type ExternalCalendarOut = components['schemas']['ExternalCalendarOut'];
+type CompanyLocationOut = components['schemas']['CompanyLocationOut'];
 
 export interface CalendarEvent {
 	id: string;
@@ -715,17 +716,44 @@ export async function fetchDefaultDemand(): Promise<
 	return response;
 }
 
+export async function fetchLocations(): Promise<CompanyLocationOut[]> {
+	const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+	return apiRequest<CompanyLocationOut[]>(
+		`${baseUrl}/schedule/locations`,
+		{ method: 'GET' },
+		'Failed to fetch locations'
+	);
+}
+
 export async function generateSchedule(
 	dateFrom: string,
 	dateTo: string,
-	force: boolean = false
+	force: boolean = false,
+	locationProp?: string
 ): Promise<components['schemas']['GenerateResultOut']> {
 	const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
 	const endpoint = `${baseUrl}/schedule/generate-range`;
 
 	// Pobierz company_name z sesji
 	const session = await auth();
-	const location = session?.user?.company_name || null;
+	let location = locationProp || session?.user?.company_name;
+
+	if (!location) {
+		try {
+			const locations = await fetchLocations();
+			if (locations && locations.length > 0) {
+				location = locations[0].name;
+				console.log(
+					`⚠️ No location in session, using fallback: ${location}`
+				);
+			}
+		} catch (e) {
+			console.warn('Failed to fetch locations for fallback', e);
+		}
+	}
+
+	// Fallback to null (which might fail API validation if strict)
+	if (!location) location = '';
 
 	const payload: components['schemas']['GenerateRangeIn'] = {
 		date_from: dateFrom,
@@ -984,5 +1012,3 @@ export async function saveWorkplaceConfig(data: WorkplaceConfig) {
 		'Failed to save workplace config'
 	);
 }
-
-
