@@ -37,125 +37,12 @@ import {
 } from '@/components/ui/table';
 import type { components } from '@/lib/types/openapi';
 import { Spinner } from '@/components/ui/spinner';
+import { useTranslations } from 'next-intl';
 
 type Employee = components['schemas']['UserList'];
 
-export const columns: ColumnDef<Employee>[] = [
-	{
-		accessorKey: 'email',
-		header: ({ column }) => {
-			return (
-				<Button
-					variant='ghost'
-					onClick={() =>
-						column.toggleSorting(column.getIsSorted() === 'asc')
-					}>
-					Email
-					<ArrowUpDown />
-				</Button>
-			);
-		},
-		cell: ({ row }) => (
-			<div className='lowercase'>{row.getValue('email')}</div>
-		),
-	},
-	{
-		accessorKey: 'first_name',
-		header: ({ column }) => {
-			return (
-				<Button
-					variant='ghost'
-					onClick={() =>
-						column.toggleSorting(column.getIsSorted() === 'asc')
-					}>
-					First Name
-					<ArrowUpDown />
-				</Button>
-			);
-		},
-		cell: ({ row }) => <div>{row.getValue('first_name')}</div>,
-	},
-	{
-		accessorKey: 'last_name',
-		header: ({ column }) => {
-			return (
-				<Button
-					variant='ghost'
-					onClick={() =>
-						column.toggleSorting(column.getIsSorted() === 'asc')
-					}>
-					Last Name
-					<ArrowUpDown />
-				</Button>
-			);
-		},
-		cell: ({ row }) => <div>{row.getValue('last_name')}</div>,
-	},
-	{
-		accessorKey: 'role',
-		header: 'Role',
-		cell: ({ row }) => (
-			<div className='capitalize'>{row.getValue('role')}</div>
-		),
-	},
-	{
-		accessorKey: 'created_at',
-		header: 'Created At',
-		cell: ({ row }) => {
-			const date = new Date(row.getValue('created_at'));
-			return <div>{date.toLocaleDateString()}</div>;
-		},
-	},
-	{
-		accessorKey: 'position_name',
-		header: 'Position Name',
-		cell: ({ row }) => <div>{row.getValue('position_name')}</div>,
-	},
-	{
-		accessorKey: 'experience_years',
-		header: 'Experience Years',
-		cell: ({ row }) => <div>{row.getValue('experience_years')}</div>,
-	},
-	{
-		accessorKey: 'notes',
-		header: 'Notes',
-		cell: ({ row }) => <div>{row.getValue('notes')}</div>,
-	},
-	{
-		id: 'actions',
-		enableHiding: false,
-		cell: ({ row }) => {
-			const employee = row.original;
-
-			return (
-				<DropdownMenu>
-					<DropdownMenuTrigger asChild>
-						<Button variant='ghost' className='h-8 w-8 p-0'>
-							<span className='sr-only'>Open menu</span>
-							<MoreHorizontal />
-						</Button>
-					</DropdownMenuTrigger>
-					<DropdownMenuContent align='end'>
-						<DropdownMenuLabel>Actions</DropdownMenuLabel>
-						<DropdownMenuItem
-							onClick={() =>
-								navigator.clipboard.writeText(
-									employee.id.toString()
-								)
-							}>
-							Copy employee ID
-						</DropdownMenuItem>
-						<DropdownMenuSeparator />
-						<DropdownMenuItem>View employee</DropdownMenuItem>
-						<DropdownMenuItem>Edit employee</DropdownMenuItem>
-					</DropdownMenuContent>
-				</DropdownMenu>
-			);
-		},
-	},
-];
-
 export default function EmployeesTable() {
+	const t = useTranslations('EmployeesTable');
 	const [employees, setEmployees] = React.useState<Employee[]>([]);
 	const [loading, setLoading] = React.useState(true);
 	const [search, setSearch] = React.useState('');
@@ -164,6 +51,187 @@ export default function EmployeesTable() {
 		React.useState<ColumnFiltersState>([]);
 	const [columnVisibility, setColumnVisibility] =
 		React.useState<VisibilityState>({});
+
+	const columns = React.useMemo<ColumnDef<Employee>[]>(
+		() => [
+			{
+				accessorKey: 'email',
+				header: ({ column }) => {
+					return (
+						<Button
+							variant='ghost'
+							onClick={() =>
+								column.toggleSorting(
+									column.getIsSorted() === 'asc'
+								)
+							}>
+							{t('email')}
+							<ArrowUpDown />
+						</Button>
+					);
+				},
+				cell: ({ row }) => (
+					<div className='lowercase'>{row.getValue('email')}</div>
+				),
+			},
+			{
+				accessorKey: 'first_name',
+				header: ({ column }) => {
+					return (
+						<Button
+							variant='ghost'
+							onClick={() =>
+								column.toggleSorting(
+									column.getIsSorted() === 'asc'
+								)
+							}>
+							{t('firstName')}
+							<ArrowUpDown />
+						</Button>
+					);
+				},
+				cell: ({ row }) => <div>{row.getValue('first_name')}</div>,
+			},
+			{
+				accessorKey: 'last_name',
+				header: ({ column }) => {
+					return (
+						<Button
+							variant='ghost'
+							onClick={() =>
+								column.toggleSorting(
+									column.getIsSorted() === 'asc'
+								)
+							}>
+							{t('lastName')}
+							<ArrowUpDown />
+						</Button>
+					);
+				},
+				cell: ({ row }) => <div>{row.getValue('last_name')}</div>,
+			},
+			{
+				accessorKey: 'role',
+				header: ({ column }) => {
+					return (
+						<Button
+							variant='ghost'
+							onClick={() =>
+								column.toggleSorting(
+									column.getIsSorted() === 'asc'
+								)
+							}>
+							{t('role')}
+							<ArrowUpDown />
+						</Button>
+					);
+				},
+				cell: ({ row }) => (
+					<div className='capitalize'>{row.getValue('role')}</div>
+				),
+			},
+			{
+				accessorKey: 'created_at',
+				header: ({ column }) => {
+					return (
+						<Button
+							variant='ghost'
+							onClick={() =>
+								column.toggleSorting(
+									column.getIsSorted() === 'asc'
+								)
+							}>
+							{t('createdAt')}
+							<ArrowUpDown />
+						</Button>
+					);
+				},
+				cell: ({ row }) => {
+					const date = new Date(row.getValue('created_at'));
+					return <div>{date.toLocaleDateString()}</div>;
+				},
+			},
+			{
+				accessorKey: 'position_name',
+				header: ({ column }) => {
+					return (
+						<Button
+							variant='ghost'
+							onClick={() =>
+								column.toggleSorting(
+									column.getIsSorted() === 'asc'
+								)
+							}>
+							{t('positionName')}
+							<ArrowUpDown />
+						</Button>
+					);
+				},
+				cell: ({ row }) => <div>{row.getValue('position_name')}</div>,
+			},
+			{
+				accessorKey: 'experience_years',
+				header: ({ column }) => {
+					return (
+						<Button
+							variant='ghost'
+							onClick={() =>
+								column.toggleSorting(
+									column.getIsSorted() === 'asc'
+								)
+							}>
+							{t('experienceYears')}
+							<ArrowUpDown />
+						</Button>
+					);
+				},
+				cell: ({ row }) => (
+					<div>{row.getValue('experience_years')}</div>
+				),
+			},
+			{
+				id: 'actions',
+				enableHiding: false,
+				cell: ({ row }) => {
+					const employee = row.original;
+
+					return (
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button variant='ghost' className='h-8 w-8 p-0'>
+									<span className='sr-only'>
+										{t('openMenu')}
+									</span>
+									<MoreHorizontal />
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align='end'>
+								<DropdownMenuLabel>
+									{t('actions')}
+								</DropdownMenuLabel>
+								<DropdownMenuItem
+									onClick={() =>
+										navigator.clipboard.writeText(
+											employee.id.toString()
+										)
+									}>
+									{t('copyId')}
+								</DropdownMenuItem>
+								<DropdownMenuSeparator />
+								<DropdownMenuItem>
+									{t('viewEmployee')}
+								</DropdownMenuItem>
+								<DropdownMenuItem>
+									{t('editEmployee')}
+								</DropdownMenuItem>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					);
+				},
+			},
+		],
+		[t]
+	);
 
 	const loadEmployees = React.useCallback(
 		async (searchTerm?: string, isInitial = false) => {
@@ -220,7 +288,7 @@ export default function EmployeesTable() {
 		<>
 			<div className='flex items-center py-4'>
 				<Input
-					placeholder='Search employees by email...'
+					placeholder={t('searchPlaceholder')}
 					value={search}
 					onChange={(event) => setSearch(event.target.value)}
 					className='max-w-sm'
@@ -228,7 +296,7 @@ export default function EmployeesTable() {
 				<DropdownMenu>
 					<DropdownMenuTrigger asChild>
 						<Button variant='outline' className='ml-auto'>
-							Columns <ChevronDown />
+							{t('columns')} <ChevronDown />
 						</Button>
 					</DropdownMenuTrigger>
 					<DropdownMenuContent align='end'>
@@ -291,7 +359,7 @@ export default function EmployeesTable() {
 								<TableCell
 									colSpan={columns.length}
 									className='h-24 text-center'>
-									No results.
+									{t('noResults')}
 								</TableCell>
 							</TableRow>
 						)}
@@ -300,7 +368,7 @@ export default function EmployeesTable() {
 			</div>
 			<div className='flex items-center justify-end space-x-2 py-4'>
 				<div className='text-muted-foreground flex-1 text-sm'>
-					{table.getFilteredRowModel().rows.length} row(s) total.
+					{table.getFilteredRowModel().rows.length} {t('rowsTotal')}
 				</div>
 				<div className='space-x-2'>
 					<Button
@@ -308,14 +376,14 @@ export default function EmployeesTable() {
 						size='sm'
 						onClick={() => table.previousPage()}
 						disabled={!table.getCanPreviousPage()}>
-						Previous
+						{t('previous')}
 					</Button>
 					<Button
 						variant='outline'
 						size='sm'
 						onClick={() => table.nextPage()}
 						disabled={!table.getCanNextPage()}>
-						Next
+						{t('next')}
 					</Button>
 				</div>
 			</div>

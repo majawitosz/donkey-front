@@ -33,22 +33,24 @@ interface WeeklyScheduleViewProps {
 	onScheduleUpdate?: () => void;
 }
 
-// Generujemy godziny od 6:00 do 22:00
+const START_HOUR = 8;
+const END_HOUR = 20;
+
 const generateHours = () => {
 	const hours: number[] = [];
-	for (let hour = 6; hour <= 22; hour++) {
+	for (let hour = START_HOUR; hour <= END_HOUR; hour++) {
 		hours.push(hour);
 	}
 	return hours;
 };
 
 const hours = generateHours();
-const HOUR_HEIGHT = 60; // Wysokość jednej godziny w pikselach
+const HOUR_HEIGHT = 40; // Wysokość jednej godziny w pikselach
 
 // Konwertuje czas (HH:MM) na offset w pikselach od początku dnia
 const timeToPixels = (time: string): number => {
 	const [h, m] = time.split(':').map(Number);
-	const totalMinutes = (h - 6) * 60 + m; // Odejmujemy 6 bo zaczynamy od 6:00
+	const totalMinutes = (h - START_HOUR) * 60 + m; // Odejmujemy START_HOUR bo zaczynamy od tej godziny
 	return (totalMinutes / 60) * HOUR_HEIGHT;
 };
 
@@ -553,7 +555,7 @@ export default function WeeklyScheduleView({
 	const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
 	return (
-		<div>
+		<div className='w-full'>
 			<div className='mb-4'>
 				<h3 className='text-lg font-semibold'>Wygenerowany grafik</h3>
 				<p className='text-sm text-muted-foreground'>

@@ -16,7 +16,7 @@ import {
 	TooltipTrigger,
 	TooltipContent,
 } from '@/components/ui/tooltip';
-import Link from 'next/link';
+import { Link, useRouter } from '@/i18n/navigation';
 import z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -28,38 +28,39 @@ import {
 	FormLabel,
 	FormMessage,
 } from '@/components/ui/form';
-import { useRouter } from 'next/navigation';
 import { useAlert } from '@/providers/alert-provider';
-
-const formSchema = z.object({
-	first_name: z
-		.string()
-		.min(2, { message: 'First name must be at least 2 characters.' })
-		.max(50, { message: 'Name too long.' }),
-	last_name: z
-		.string()
-		.min(2, { message: 'Last name must be at least 2 characters.' })
-		.max(50, { message: 'Last name too long.' }),
-	email: z.email({ message: 'Invalid email address.' }),
-	password: z
-		.string()
-		.min(8, { message: 'Password must be at least 8 characters.' })
-		.regex(/[A-Z]/, {
-			message: 'Password must contain at least 1 uppercase letter.',
-		})
-		.regex(/[0-9]/, { message: 'Password must contain at least 1 number.' })
-		.regex(/[@$!%*?&]/, {
-			message:
-				'Password must contain at least 1 special character (@$!%*?&).',
-		}),
-	company_code: z.string().min(2, {
-		message: 'Company code must be at least 2 characters.',
-	}),
-});
+import { useTranslations } from 'next-intl';
 
 export default function SignUpWorkerForm() {
+	const t = useTranslations('Auth');
 	const router = useRouter();
 	const { showAlert } = useAlert();
+
+	const formSchema = z.object({
+		first_name: z
+			.string()
+			.min(2, { message: t('validation.minLength') })
+			.max(50, { message: t('validation.maxLength') }),
+		last_name: z
+			.string()
+			.min(2, { message: t('validation.minLength') })
+			.max(50, { message: t('validation.maxLength') }),
+		email: z.email({ message: t('validation.emailInvalid') }),
+		password: z
+			.string()
+			.min(8, { message: t('validation.passwordLength') })
+			.regex(/[A-Z]/, {
+				message: t('validation.passwordUppercase'),
+			})
+			.regex(/[0-9]/, { message: t('validation.passwordNumber') })
+			.regex(/[@$!%*?&]/, {
+				message: t('validation.passwordSpecial'),
+			}),
+		company_code: z.string().min(2, {
+			message: t('validation.companyCodeLength'),
+		}),
+	});
+
 	const form = useForm<z.infer<typeof formSchema>>({
 		resolver: zodResolver(formSchema),
 		defaultValues: {
@@ -86,7 +87,8 @@ export default function SignUpWorkerForm() {
 			const errorData = await response.json().catch(() => ({}));
 			Object.entries(errorData).forEach(([field, messages]) => {
 				if (Array.isArray(messages)) {
-					form.setError(field as keyof z.infer<typeof formSchema>, {
+					// @ts-ignore
+					form.setError(field, {
 						type: 'server',
 						message: messages.join(', '),
 					});
@@ -100,17 +102,17 @@ export default function SignUpWorkerForm() {
 		<Form {...form}>
 			<form
 				onSubmit={form.handleSubmit(onSubmit)}
-				className='flex w-full justify-center min-h-screen items-center'>
+				className='flex w-full justify-center flex-1 items-center'>
 				<Card className='w-full max-w-lg'>
 					<CardHeader>
-						<CardTitle>Sign Up as a Worker</CardTitle>
+						<CardTitle>{t('signup.workerTitle')}</CardTitle>
 						<CardDescription>
-							Enter your data below to sign up
+							{t('signup.description')}
 						</CardDescription>
 						<CardAction>
 							<Button variant='link'>
 								<Link href='/login'>
-									Already have an account
+									{t('signup.alreadyHaveAccount')}
 								</Link>
 							</Button>
 						</CardAction>
@@ -123,7 +125,9 @@ export default function SignUpWorkerForm() {
 									name='first_name'
 									render={({ field }) => (
 										<FormItem>
-											<FormLabel>First Name</FormLabel>
+											<FormLabel>
+												{t('signup.firstName')}
+											</FormLabel>
 											<FormControl>
 												<Input
 													placeholder='John'
@@ -142,7 +146,9 @@ export default function SignUpWorkerForm() {
 									name='last_name'
 									render={({ field }) => (
 										<FormItem>
-											<FormLabel>Last Name</FormLabel>
+											<FormLabel>
+												{t('signup.lastName')}
+											</FormLabel>
 											<FormControl>
 												<Input
 													placeholder='Doe'
@@ -161,7 +167,9 @@ export default function SignUpWorkerForm() {
 									name='email'
 									render={({ field }) => (
 										<FormItem>
-											<FormLabel>Email</FormLabel>
+											<FormLabel>
+												{t('signup.email')}
+											</FormLabel>
 											<FormControl>
 												<Input
 													placeholder='m@example.com'
@@ -181,7 +189,9 @@ export default function SignUpWorkerForm() {
 									name='password'
 									render={({ field }) => (
 										<FormItem>
-											<FormLabel>Password</FormLabel>
+											<FormLabel>
+												{t('signup.password')}
+											</FormLabel>
 											<FormControl>
 												<Input
 													placeholder='********'
@@ -203,19 +213,21 @@ export default function SignUpWorkerForm() {
 										<FormItem>
 											<div className='flex items-center'>
 												<FormLabel>
-													Company Code
+													{t('signup.companyCode')}
 												</FormLabel>
 												<Tooltip>
 													<TooltipTrigger asChild>
 														<p className='ml-auto inline-block text-sm underline-offset-4 hover:underline'>
-															How do I get a
-															company code?
+															{t(
+																'signup.howToGetCode'
+															)}
 														</p>
 													</TooltipTrigger>
 													<TooltipContent>
 														<p>
-															Contact your company
-															owner
+															{t(
+																'signup.contactOwner'
+															)}
 														</p>
 													</TooltipContent>
 												</Tooltip>
@@ -237,10 +249,10 @@ export default function SignUpWorkerForm() {
 					</CardContent>
 					<CardFooter className='flex-col gap-2'>
 						<Button type='submit' className='w-full'>
-							Sign Up
+							{t('signup.submit')}
 						</Button>
 						<Button variant='outline' className='w-full'>
-							Sign Up with Google
+							{t('signup.google')}
 						</Button>
 					</CardFooter>
 				</Card>

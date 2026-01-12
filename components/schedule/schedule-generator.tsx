@@ -128,7 +128,7 @@ export default function ScheduleGenerator() {
 
 	return (
 		<>
-			<Card>
+			<Card className='w-[80%] lg:w-3/4'>
 				<CardHeader>
 					<CardTitle>Generator grafików</CardTitle>
 				</CardHeader>
