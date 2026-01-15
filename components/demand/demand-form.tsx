@@ -31,6 +31,7 @@ import { Spinner } from '../ui/spinner';
 import { submitDemand, fetchDefaultDemand } from '@/lib/actions';
 import type { components } from '@/lib/types/openapi';
 import { useAlert } from '@/providers/alert-provider';
+import { useUser } from '@/providers/user-provider';
 
 type Shift = {
 	id: string;
@@ -66,6 +67,7 @@ const createEmptyShift = (): Shift => ({
 });
 
 export default function DemandForm() {
+	const { selectedLocation } = useUser();
 	const { showAlert } = useAlert();
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
@@ -118,9 +120,12 @@ export default function DemandForm() {
 	// Załaduj domyślne zapotrzebowanie przy montowaniu komponentu
 	useEffect(() => {
 		const loadDefaultDemand = async () => {
+			if (!selectedLocation) return;
 			try {
 				setIsLoading(true);
-				const defaultDemand = await fetchDefaultDemand();
+				const defaultDemand = await fetchDefaultDemand(
+					selectedLocation.id.toString()
+				);
 
 				// Przekształć dane z API do formatu formularza
 				if (
@@ -166,7 +171,7 @@ export default function DemandForm() {
 		};
 
 		loadDefaultDemand();
-	}, []);
+	}, [selectedLocation]);
 
 	const addShift = (dayIndex: number) => {
 		setDayShifts((prev) => {
@@ -212,6 +217,16 @@ export default function DemandForm() {
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
+
+		if (!selectedLocation) {
+			showAlert({
+				title: 'Błąd',
+				description: 'Wybierz lokalizację',
+				variant: 'destructive',
+			});
+			return;
+		}
+
 		setIsSubmitting(true);
 
 		try {
@@ -226,7 +241,10 @@ export default function DemandForm() {
 				})),
 			}));
 
-			const result = await submitDemand(shiftsPerDay);
+			const result = await submitDemand(
+				shiftsPerDay,
+				selectedLocation.id.toString()
+			);
 
 			showAlert({
 				title: 'Sukces!',

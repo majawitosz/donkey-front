@@ -10,12 +10,14 @@ import { generateSchedule } from '@/lib/actions';
 import { Spinner } from '@/components/ui/spinner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAlert } from '@/providers/alert-provider';
+import { useUser } from '@/providers/user-provider';
 import type { components } from '@/lib/types/openapi';
 import WeeklyScheduleView from './weekly-schedule-view';
 
 type GenerateResultOut = components['schemas']['GenerateResultOut'];
 
 export default function ScheduleGenerator() {
+	const { selectedLocation } = useUser();
 	const { showAlert } = useAlert();
 	const [loading, setLoading] = React.useState(false);
 	const [currentWeekStart, setCurrentWeekStart] = React.useState<Date>(() =>
@@ -32,13 +34,19 @@ export default function ScheduleGenerator() {
 	// Automatycznie ładuj grafik przy montowaniu i zmianie tygodnia
 	React.useEffect(() => {
 		const loadSchedule = async () => {
+			if (!selectedLocation) return;
 			setLoading(true);
 			try {
 				const dateFrom = format(currentWeekStart, 'yyyy-MM-dd');
 				const dateTo = format(currentWeekEnd, 'yyyy-MM-dd');
 
 				// force: false - tylko załaduj istniejący grafik
-				const result = await generateSchedule(dateFrom, dateTo, false);
+				const result = await generateSchedule(
+					dateFrom,
+					dateTo,
+					selectedLocation.id.toString(),
+					false
+				);
 
 				setGeneratedSchedule(result);
 				console.log('✅ Schedule loaded:', result);
@@ -50,7 +58,7 @@ export default function ScheduleGenerator() {
 						error instanceof Error
 							? error.message
 							: 'Nie udało się załadować grafiku',
-					variant: 'error',
+					variant: 'destructive',
 				});
 			} finally {
 				setLoading(false);
@@ -59,17 +67,23 @@ export default function ScheduleGenerator() {
 
 		loadSchedule();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [currentWeekStart]); // Reaguj tylko na zmianę tygodnia
+	}, [currentWeekStart, selectedLocation]); // Reaguj tylko na zmianę tygodnia
 
 	// Funkcja do odświeżania grafiku (dla edycji)
 	const refreshSchedule = React.useCallback(async () => {
+		if (!selectedLocation) return;
 		setLoading(true);
 		try {
 			const dateFrom = format(currentWeekStart, 'yyyy-MM-dd');
 			const dateTo = format(currentWeekEnd, 'yyyy-MM-dd');
 
 			// force: false - tylko załaduj istniejący grafik
-			const result = await generateSchedule(dateFrom, dateTo, false);
+			const result = await generateSchedule(
+				dateFrom,
+				dateTo,
+				selectedLocation.id.toString(),
+				false
+			);
 
 			setGeneratedSchedule(result);
 			console.log('✅ Schedule refreshed:', result);
@@ -78,17 +92,31 @@ export default function ScheduleGenerator() {
 		} finally {
 			setLoading(false);
 		}
-	}, [currentWeekStart, currentWeekEnd]);
+	}, [currentWeekStart, currentWeekEnd, selectedLocation]);
 
 	// Funkcja do regenerowania grafiku (force: true)
 	const regenerateSchedule = React.useCallback(async () => {
+		if (!selectedLocation) {
+			showAlert({
+				title: 'Błąd',
+				description: 'Wybierz lokalizację',
+				variant: 'destructive',
+			});
+			return;
+		}
+
 		setLoading(true);
 		try {
 			const dateFrom = format(currentWeekStart, 'yyyy-MM-dd');
 			const dateTo = format(currentWeekEnd, 'yyyy-MM-dd');
 
 			// force: true - wygeneruj ponownie od zera
-			const result = await generateSchedule(dateFrom, dateTo, true);
+			const result = await generateSchedule(
+				dateFrom,
+				dateTo,
+				selectedLocation.id.toString(),
+				true
+			);
 
 			setGeneratedSchedule(result);
 			showAlert({
