@@ -222,7 +222,7 @@ export default function DemandForm() {
 			showAlert({
 				title: 'Błąd',
 				description: 'Wybierz lokalizację',
-				variant: 'destructive',
+				variant: 'error',
 			});
 			return;
 		}

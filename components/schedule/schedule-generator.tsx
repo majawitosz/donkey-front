@@ -58,7 +58,7 @@ export default function ScheduleGenerator() {
 						error instanceof Error
 							? error.message
 							: 'Nie udało się załadować grafiku',
-					variant: 'destructive',
+					variant: 'error',
 				});
 			} finally {
 				setLoading(false);
@@ -100,7 +100,7 @@ export default function ScheduleGenerator() {
 			showAlert({
 				title: 'Błąd',
 				description: 'Wybierz lokalizację',
-				variant: 'destructive',
+				variant: 'error',
 			});
 			return;
 		}
