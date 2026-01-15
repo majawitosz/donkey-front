@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import {
@@ -29,23 +29,22 @@ export default function AddEmployeeSection() {
 	const { showAlert } = useAlert();
 
 	useEffect(() => {
+		const loadData = async () => {
+			try {
+				const [codeData, employees] = await Promise.all([
+					fetchCompanyCode(),
+					fetchEmployees(),
+				]);
+				setCompanyCode(codeData);
+				setEmployeeCount(employees.length);
+			} catch {
+				showAlert({ variant: 'error', title: t('loadError') });
+			} finally {
+				setIsDataLoading(false);
+			}
+		};
 		loadData();
-	}, []);
-
-	const loadData = async () => {
-		try {
-			const [codeData, employees] = await Promise.all([
-				fetchCompanyCode(),
-				fetchEmployees(),
-			]);
-			setCompanyCode(codeData);
-			setEmployeeCount(employees.length);
-		} catch (error) {
-			showAlert({ variant: 'error', title: t('loadError') });
-		} finally {
-			setIsDataLoading(false);
-		}
-	};
+	}, [showAlert, t]);
 
 	const handleGenerateCode = async () => {
 		setLoading(true);
@@ -56,7 +55,7 @@ export default function AddEmployeeSection() {
 				variant: 'success',
 				title: t('codeGeneratedSuccess'),
 			});
-		} catch (error) {
+		} catch {
 			showAlert({
 				variant: 'error',
 				title: t('codeGenerateError'),

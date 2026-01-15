@@ -1,10 +1,6 @@
 /** @format */
 
-import {
-	SidebarInset,
-	SidebarProvider,
-	SidebarTrigger,
-} from '@/components/ui/sidebar';
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/ui/app-sidebar';
 import { auth } from '@/auth';
 import { UserProvider } from '@/providers/user-provider';

@@ -22,14 +22,12 @@ import {
 	Field,
 	FieldLabel,
 	FieldSeparator,
-	FieldTitle,
 } from '../ui/field';
 import { Input } from '../ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Switch } from '../ui/switch';
 import { Spinner } from '../ui/spinner';
 import { submitDemand, fetchDefaultDemand } from '@/lib/actions';
-import type { components } from '@/lib/types/openapi';
 import { useAlert } from '@/providers/alert-provider';
 import { useUser } from '@/providers/user-provider';
 
@@ -162,7 +160,7 @@ export default function DemandForm() {
 
 					setDayShifts(loadedShifts);
 				}
-			} catch (error) {
+			} catch {
 				console.log('ℹ️ No default demand found, using empty form');
 				// Nie pokazujemy alertu - to normalna sytuacja dla nowego użytkownika
 			} finally {
@@ -359,148 +357,137 @@ export default function DemandForm() {
 									</CardHeader>
 									<CardContent>
 										<div className='space-y-4'>
-											{dayData.shifts.map(
-												(shift, shiftIndex) => (
-													<div
-														key={shift.id}
-														className='flex gap-4 items-start p-4 border rounded-lg bg-muted/30'>
-														<div className='flex gap-4 flex-1 flex-wrap'>
-															<Field
-																orientation='horizontal'
-																className='max-w-fit'>
-																<FieldLabel
-																	htmlFor={`${dayData.day}-${shift.id}-from`}>
-																	Od
-																</FieldLabel>
-																<Input
-																	type='time'
-																	id={`${dayData.day}-${shift.id}-from`}
-																	value={
-																		shift.timeFrom
-																	}
-																	onChange={(
-																		e
-																	) =>
-																		updateShift(
-																			dayIndex,
-																			shift.id,
-																			'timeFrom',
-																			e
-																				.target
-																				.value
-																		)
-																	}
-																	className='max-w-[120px] bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none'
-																/>
-															</Field>
-
-															<Field
-																orientation='horizontal'
-																className='max-w-fit'>
-																<FieldLabel
-																	htmlFor={`${dayData.day}-${shift.id}-to`}>
-																	Do
-																</FieldLabel>
-																<Input
-																	type='time'
-																	id={`${dayData.day}-${shift.id}-to`}
-																	value={
-																		shift.timeTo
-																	}
-																	onChange={(
-																		e
-																	) =>
-																		updateShift(
-																			dayIndex,
-																			shift.id,
-																			'timeTo',
-																			e
-																				.target
-																				.value
-																		)
-																	}
-																	className='max-w-[120px] bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none'
-																/>
-															</Field>
-
-															<Field
-																orientation='horizontal'
-																className='max-w-fit gap-2'>
-																<FieldLabel
-																	htmlFor={`${dayData.day}-${shift.id}-experienced`}>
-																	Doświadczony
-																</FieldLabel>
-																<Switch
-																	id={`${dayData.day}-${shift.id}-experienced`}
-																	checked={
-																		shift.experienced
-																	}
-																	onCheckedChange={(
-																		checked
-																	) =>
-																		updateShift(
-																			dayIndex,
-																			shift.id,
-																			'experienced',
-																			checked
-																		)
-																	}
-																/>
-															</Field>
-
-															<Field
-																orientation='horizontal'
-																className='max-w-fit'>
-																<FieldLabel
-																	htmlFor={`${dayData.day}-${shift.id}-amount`}>
-																	Ile Osób
-																</FieldLabel>
-																<Input
-																	type='number'
-																	id={`${dayData.day}-${shift.id}-amount`}
-																	value={
-																		shift.amount
-																	}
-																	onChange={(
-																		e
-																	) =>
-																		updateShift(
-																			dayIndex,
-																			shift.id,
-																			'amount',
-																			parseInt(
-																				e
-																					.target
-																					.value
-																			) ||
-																				1
-																		)
-																	}
-																	min='1'
-																	className='max-w-[80px] bg-background'
-																/>
-															</Field>
-														</div>
-
-														{dayData.shifts.length >
-															1 && (
-															<Button
-																type='button'
-																variant='ghost'
-																size='icon'
-																className='text-destructive hover:text-destructive'
-																onClick={() =>
-																	removeShift(
+											{dayData.shifts.map((shift) => (
+												<div
+													key={shift.id}
+													className='flex gap-4 items-start p-4 border rounded-lg bg-muted/30'>
+													<div className='flex gap-4 flex-1 flex-wrap'>
+														<Field
+															orientation='horizontal'
+															className='max-w-fit'>
+															<FieldLabel
+																htmlFor={`${dayData.day}-${shift.id}-from`}>
+																Od
+															</FieldLabel>
+															<Input
+																type='time'
+																id={`${dayData.day}-${shift.id}-from`}
+																value={
+																	shift.timeFrom
+																}
+																onChange={(e) =>
+																	updateShift(
 																		dayIndex,
-																		shift.id
+																		shift.id,
+																		'timeFrom',
+																		e.target
+																			.value
 																	)
-																}>
-																<Trash2 className='h-4 w-4' />
-															</Button>
-														)}
+																}
+																className='max-w-[120px] bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none'
+															/>
+														</Field>
+
+														<Field
+															orientation='horizontal'
+															className='max-w-fit'>
+															<FieldLabel
+																htmlFor={`${dayData.day}-${shift.id}-to`}>
+																Do
+															</FieldLabel>
+															<Input
+																type='time'
+																id={`${dayData.day}-${shift.id}-to`}
+																value={
+																	shift.timeTo
+																}
+																onChange={(e) =>
+																	updateShift(
+																		dayIndex,
+																		shift.id,
+																		'timeTo',
+																		e.target
+																			.value
+																	)
+																}
+																className='max-w-[120px] bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none'
+															/>
+														</Field>
+
+														<Field
+															orientation='horizontal'
+															className='max-w-fit gap-2'>
+															<FieldLabel
+																htmlFor={`${dayData.day}-${shift.id}-experienced`}>
+																Doświadczony
+															</FieldLabel>
+															<Switch
+																id={`${dayData.day}-${shift.id}-experienced`}
+																checked={
+																	shift.experienced
+																}
+																onCheckedChange={(
+																	checked
+																) =>
+																	updateShift(
+																		dayIndex,
+																		shift.id,
+																		'experienced',
+																		checked
+																	)
+																}
+															/>
+														</Field>
+
+														<Field
+															orientation='horizontal'
+															className='max-w-fit'>
+															<FieldLabel
+																htmlFor={`${dayData.day}-${shift.id}-amount`}>
+																Ile Osób
+															</FieldLabel>
+															<Input
+																type='number'
+																id={`${dayData.day}-${shift.id}-amount`}
+																value={
+																	shift.amount
+																}
+																onChange={(e) =>
+																	updateShift(
+																		dayIndex,
+																		shift.id,
+																		'amount',
+																		parseInt(
+																			e
+																				.target
+																				.value
+																		) || 1
+																	)
+																}
+																min='1'
+																className='max-w-[80px] bg-background'
+															/>
+														</Field>
 													</div>
-												)
-											)}
+
+													{dayData.shifts.length >
+														1 && (
+														<Button
+															type='button'
+															variant='ghost'
+															size='icon'
+															className='text-destructive hover:text-destructive'
+															onClick={() =>
+																removeShift(
+																	dayIndex,
+																	shift.id
+																)
+															}>
+															<Trash2 className='h-4 w-4' />
+														</Button>
+													)}
+												</div>
+											))}
 
 											<Button
 												type='button'

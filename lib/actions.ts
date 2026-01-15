@@ -6,7 +6,6 @@ import { signIn, signOut, auth } from '@/auth';
 import { AuthError } from 'next-auth';
 import { redirect } from 'next/navigation';
 import type { components } from '@/lib/types/openapi';
-import { decodeJwtPayload } from './token';
 
 const API_ROOT_URL = process.env.NEXT_PUBLIC_API_URL
 	? process.env.NEXT_PUBLIC_API_URL.replace(/\/$/, '')
@@ -147,45 +146,45 @@ async function refreshToken(
 		return null;
 	}
 }
+//TO DO nie wiem czemy było nieużywane
+// async function getAccessToken(): Promise<string> {
+// 	const session = await auth();
+// 	if (!session?.user?.accessToken) {
+// 		throw new Error('No access token in session');
+// 	}
 
-async function getAccessToken(): Promise<string> {
-	const session = await auth();
-	if (!session?.user?.accessToken) {
-		throw new Error('No access token in session');
-	}
+// 	// Sprawdź czy token nie wygasł
+// 	try {
+// 		const decoded = decodeJwtPayload(session.user.accessToken);
+// 		const expiresAt = decoded.exp * 1000;
+// 		const now = Date.now();
+// 		const timeUntilExpiry = expiresAt - now;
 
-	// Sprawdź czy token nie wygasł
-	try {
-		const decoded = decodeJwtPayload(session.user.accessToken);
-		const expiresAt = decoded.exp * 1000;
-		const now = Date.now();
-		const timeUntilExpiry = expiresAt - now;
+// 		console.log(
+// 			`🔑 Token expires in ${Math.round(timeUntilExpiry / 1000)}s`
+// 		);
 
-		console.log(
-			`🔑 Token expires in ${Math.round(timeUntilExpiry / 1000)}s`
-		);
+// 		// Jeśli token wygasa za mniej niż 5 minut, odśwież go
+// 		if (timeUntilExpiry < 5 * 60 * 1000) {
+// 			console.log('⚠️ Token expires soon, refreshing...');
+// 			if (session.user.refreshToken) {
+// 				const newTokens = await refreshToken(session.user.refreshToken);
+// 				if (newTokens) {
+// 					// Zaktualizuj sesję - to powinno wywołać jwt callback
+// 					// Ale nie mamy bezpośredniego dostępu do update w server actions
+// 					console.log(
+// 						'✅ Got new tokens, but cannot update session from server action'
+// 					);
+// 					return newTokens.access;
+// 				}
+// 			}
+// 		}
+// 	} catch (error) {
+// 		console.error('❌ Error decoding token:', error);
+// 	}
 
-		// Jeśli token wygasa za mniej niż 5 minut, odśwież go
-		if (timeUntilExpiry < 5 * 60 * 1000) {
-			console.log('⚠️ Token expires soon, refreshing...');
-			if (session.user.refreshToken) {
-				const newTokens = await refreshToken(session.user.refreshToken);
-				if (newTokens) {
-					// Zaktualizuj sesję - to powinno wywołać jwt callback
-					// Ale nie mamy bezpośredniego dostępu do update w server actions
-					console.log(
-						'✅ Got new tokens, but cannot update session from server action'
-					);
-					return newTokens.access;
-				}
-			}
-		}
-	} catch (error) {
-		console.error('❌ Error decoding token:', error);
-	}
-
-	return session.user.accessToken;
-}
+// 	return session.user.accessToken;
+// }
 
 async function authorizedFetch(
 	endpoint: string | URL,
@@ -260,9 +259,9 @@ async function apiRequest<T>(
 		const error = new Error(
 			`${errorMessage}: ${response.status} ${response.statusText}`
 		);
-		// @ts-ignore
+		// @ts-expect-error @typescript-eslint/ban-ts-comment
 		error.data = errorData;
-		// @ts-ignore
+		// @ts-expect-error @typescript-eslint/ban-ts-comment
 		error.status = response.status;
 		throw error;
 	}
@@ -922,8 +921,12 @@ export async function registerAttendanceEvent(data: {
 			'Failed to register attendance event'
 		);
 		return { success: true, data: response };
-	} catch (error: any) {
-		return { success: false, error: error.data || error.message };
+	} catch (error: unknown) {
+		const err = error as { data?: unknown; message: string };
+		return {
+			success: false,
+			error: err.data || err.message,
+		};
 	}
 }
 

@@ -4,7 +4,6 @@
 import * as React from 'react';
 import { format, addDays } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
 	Dialog,
 	DialogContent,
@@ -22,10 +21,6 @@ type ScheduleShiftOut = components['schemas']['ScheduleShiftOut'];
 type ShiftAssignedEmployeeOut =
 	components['schemas']['ShiftAssignedEmployeeOut'];
 type ShiftEmployeeSegmentOut = components['schemas']['ShiftEmployeeSegmentOut'];
-type ShiftUpdateIn = components['schemas']['ShiftUpdateIn'];
-type ShiftAssignedEmployeeIn = components['schemas']['ShiftAssignedEmployeeIn'];
-type ShiftEmployeeSegmentIn = components['schemas']['ShiftEmployeeSegmentIn'];
-type UserDetail = components['schemas']['UserList'];
 
 interface WeeklyScheduleViewProps {
 	weekStart: Date;
@@ -368,7 +363,7 @@ function DaySummaryBlock({
 														.employee_id
 												) {
 													// Tworzymy nową listę segmentów
-													let newSegments = [
+													const newSegments = [
 														...emp.segments,
 													];
 													// Znajdź segment do zastąpienia
@@ -427,7 +422,6 @@ function DaySummaryBlock({
 
 // Komponent kolumny dnia
 function DayColumn({
-	date,
 	shifts,
 	onScheduleUpdate,
 	employeeNames,

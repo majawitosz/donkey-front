@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { format, addDays, startOfWeek, endOfWeek } from 'date-fns';
+import { format, addDays, endOfWeek } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -51,7 +51,6 @@ const getSlotsForDay = (
 
 export default function WeeklyAvailabilityView({
 	employeeName,
-	employeeId,
 	weekStart,
 	availabilityData,
 	onClose,

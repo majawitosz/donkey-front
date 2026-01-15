@@ -39,10 +39,9 @@ import {
 	updatePosition,
 	deletePosition,
 } from '@/lib/actions';
-import { Plus, Edit, Trash2, Link } from 'lucide-react';
+import { Plus, Edit, Trash2 } from 'lucide-react';
 import {
 	Card,
-	CardAction,
 	CardDescription,
 	CardHeader,
 	CardTitle,

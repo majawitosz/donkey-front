@@ -10,14 +10,7 @@ import {
 	useReactTable,
 } from '@tanstack/react-table';
 import { ChevronLeft, ChevronRight, Eye } from 'lucide-react';
-import {
-	format,
-	startOfWeek,
-	endOfWeek,
-	addWeeks,
-	subWeeks,
-	addDays,
-} from 'date-fns';
+import { format, startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns';
 import { pl } from 'date-fns/locale';
 
 import { Button } from '@/components/ui/button';
@@ -36,7 +29,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import WeeklyAvailabilityView from './weekly-availability-view';
 
 type AvailabilityOut = components['schemas']['AvailabilityOut'];
-type UserDetail = components['schemas']['UserList'];
 
 // Grupujemy dane po pracowniku
 type EmployeeAvailability = {

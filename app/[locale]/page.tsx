@@ -9,13 +9,12 @@ import {
 	CardTitle,
 } from '@/components/ui/card';
 import { Link } from '@/i18n/navigation';
-import Image from 'next/image';
 import { PublicHeader } from '@/components/ui/public-header';
 import { useTranslations } from 'next-intl';
 
 export default function Home() {
 	const t = useTranslations('Home');
-	const tCommon = useTranslations('Common');
+	//const tCommon = useTranslations('Common');
 
 	return (
 		<div className='flex min-h-screen flex-col'>

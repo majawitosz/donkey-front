@@ -1,7 +1,7 @@
 /** @format */
 'use client';
 import * as React from 'react';
-import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns';
 import { pl } from 'date-fns/locale';
 
@@ -138,7 +138,7 @@ export default function ScheduleGenerator() {
 		} finally {
 			setLoading(false);
 		}
-	}, [currentWeekStart, currentWeekEnd, showAlert]);
+	}, [currentWeekStart, currentWeekEnd, showAlert, selectedLocation]);
 
 	const handlePreviousWeek = () => {
 		setCurrentWeekStart((prev) => subWeeks(prev, 1));

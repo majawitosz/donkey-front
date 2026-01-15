@@ -1,7 +1,7 @@
 /** @format */
 
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Geist } from 'next/font/google';
 import { ThemeProvider } from '@/providers/theme-provider';
 import '../globals.css';
 import { AlertProvider } from '@/providers/alert-provider';
@@ -11,11 +11,6 @@ import { getMessages } from 'next-intl/server';
 
 const geistSans = Geist({
 	variable: '--font-geist-sans',
-	subsets: ['latin'],
-});
-
-const geistMono = Geist_Mono({
-	variable: '--font-geist-mono',
 	subsets: ['latin'],
 });
 

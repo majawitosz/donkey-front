@@ -28,13 +28,11 @@ import {
 	FormLabel,
 	FormMessage,
 } from '@/components/ui/form';
-import { useAlert } from '@/providers/alert-provider';
 import { useTranslations } from 'next-intl';
 
 export default function SignUpWorkerForm() {
 	const t = useTranslations('Auth');
 	const router = useRouter();
-	const { showAlert } = useAlert();
 
 	const formSchema = z.object({
 		first_name: z
@@ -87,7 +85,7 @@ export default function SignUpWorkerForm() {
 			const errorData = await response.json().catch(() => ({}));
 			Object.entries(errorData).forEach(([field, messages]) => {
 				if (Array.isArray(messages)) {
-					// @ts-ignore
+					// @ts-expect-error -- handling server side validation errors dynamically
 					form.setError(field, {
 						type: 'server',
 						message: messages.join(', '),

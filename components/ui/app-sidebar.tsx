@@ -33,7 +33,7 @@ import { Link } from '@/i18n/navigation';
 
 export function AppSidebar() {
 	const t = useTranslations('Sidebar');
-	const { user, isOwner, isEmployee, isManager } = useUser();
+	const { user, isOwner, isEmployee } = useUser();
 	const navUser = {
 		name: user ? user.full_name : '',
 		email: user ? user.email : '',

@@ -23,13 +23,11 @@ import { Input } from '@/components/ui/input';
 import z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { useAlert } from '@/providers/alert-provider';
 import { useTranslations } from 'next-intl';
 
 export default function SignUpForm() {
 	const t = useTranslations('Auth');
 	const router = useRouter();
-	const { showAlert } = useAlert();
 
 	const formSchema = z.object({
 		company_name: z
@@ -93,7 +91,7 @@ export default function SignUpForm() {
 			const errorData = await response.json().catch(() => ({}));
 			Object.entries(errorData).forEach(([field, messages]) => {
 				if (Array.isArray(messages)) {
-					// @ts-ignore
+					// @ts-expect-error -- handling server side validation errors dynamically
 					form.setError(field, {
 						type: 'server',
 						message: messages.join(', '),
