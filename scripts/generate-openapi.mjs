@@ -22,10 +22,9 @@ const authToken = process.env.OPENAPI_TOKEN;
 if (authToken) {
 	httpHeaders.Authorization = `Bearer ${authToken}`;
 } else {
-	// Try to get token from local API endpoint
 	try {
 		const tokenResponse = await fetch(
-			'http://localhost:3000/api/get-token'
+			'http://localhost:3000/api/get-token',
 		);
 		if (tokenResponse.ok) {
 			const { token } = await tokenResponse.json();
@@ -33,44 +32,37 @@ if (authToken) {
 			console.log('Using token from active session');
 		} else {
 			console.warn(
-				'No OPENAPI_TOKEN in .env and could not fetch from session. Schema might require auth.'
+				'No OPENAPI_TOKEN in .env and could not fetch from session. Schema might require auth.',
 			);
 		}
 	} catch (error) {
 		console.warn(
-			'Could not fetch token from session. Make sure dev server is running or set OPENAPI_TOKEN in .env'
+			'Could not fetch token from session. Make sure dev server is running or set OPENAPI_TOKEN in .env',
 		);
 	}
 }
 
 try {
-	// Fetch schema manually
 	const response = await fetch(baseUrl + schemaPath, {
 		headers: httpHeaders,
 	});
 	if (!response.ok) {
 		console.error(
-			`Failed to fetch schema: ${response.status} ${response.statusText}`
+			`Failed to fetch schema: ${response.status} ${response.statusText}`,
 		);
 		const body = await response.text();
 		console.error(body);
 		process.exit(1);
 	}
-
 	const schemaJson = await response.json();
-
-	// openapi-typescript v7 returns AST nodes
 	const ast = await openapiTS(schemaJson);
-
-	// Convert AST to TypeScript string
 	const output = astToString(ast);
-
 	const resolvedOutputPath = resolve(outputPath);
 	await mkdir(dirname(resolvedOutputPath), { recursive: true });
 	await writeFile(resolvedOutputPath, output, 'utf8');
-	console.log(`✅ Types written to ${resolvedOutputPath}`);
+	console.log(`Types written to ${resolvedOutputPath}`);
 } catch (error) {
-	console.error('❌ Failed to generate OpenAPI types');
+	console.error('Failed to generate OpenAPI types');
 	if (error instanceof Error) {
 		console.error(error.message);
 	} else {

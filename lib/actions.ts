@@ -16,6 +16,8 @@ const ACCOUNTS_BASE_URL = API_ROOT_URL
 
 type Position = components['schemas']['Position'];
 type UserDetail = components['schemas']['UserList'];
+type EmployeeDetail = components['schemas']['UserDetail'];
+type PatchedEmployeeDetail = components['schemas']['PatchedUserDetail'];
 type AvailabilityOut = components['schemas']['AvailabilityOut'];
 type CompanyCodeResponse = components['schemas']['CompanyCode'];
 type CalendarEventOut = components['schemas']['CalendarEventOut'];
@@ -71,7 +73,6 @@ export interface CalendarOverview {
 	integrations: CalendarIntegration[];
 }
 
-// Typ dla odpowiedzi z paginacją
 type PaginatedResponse<T> = {
 	count: number;
 	next: string | null;
@@ -112,9 +113,8 @@ function resolveApiUrl(endpoint: string | URL): string {
 	return new URL(normalized, ACCOUNTS_BASE_URL).toString();
 }
 
-// Funkcja odświeżająca token
 async function refreshToken(
-	refreshToken: string
+	refreshToken: string,
 ): Promise<{ access: string; refresh?: string } | null> {
 	try {
 		console.log('🔄 Attempting to refresh access token...');
@@ -124,14 +124,14 @@ async function refreshToken(
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ refresh: refreshToken }),
-			}
+			},
 		);
 
 		if (!response.ok) {
 			console.error(
 				'❌ Failed to refresh token:',
 				response.status,
-				response.statusText
+				response.statusText,
 			);
 			const errorText = await response.text();
 			console.error('Response body:', errorText);
@@ -146,50 +146,11 @@ async function refreshToken(
 		return null;
 	}
 }
-//TO DO nie wiem czemy było nieużywane
-// async function getAccessToken(): Promise<string> {
-// 	const session = await auth();
-// 	if (!session?.user?.accessToken) {
-// 		throw new Error('No access token in session');
-// 	}
-
-// 	// Sprawdź czy token nie wygasł
-// 	try {
-// 		const decoded = decodeJwtPayload(session.user.accessToken);
-// 		const expiresAt = decoded.exp * 1000;
-// 		const now = Date.now();
-// 		const timeUntilExpiry = expiresAt - now;
-
-// 		console.log(
-// 			`🔑 Token expires in ${Math.round(timeUntilExpiry / 1000)}s`
-// 		);
-
-// 		// Jeśli token wygasa za mniej niż 5 minut, odśwież go
-// 		if (timeUntilExpiry < 5 * 60 * 1000) {
-// 			console.log('⚠️ Token expires soon, refreshing...');
-// 			if (session.user.refreshToken) {
-// 				const newTokens = await refreshToken(session.user.refreshToken);
-// 				if (newTokens) {
-// 					// Zaktualizuj sesję - to powinno wywołać jwt callback
-// 					// Ale nie mamy bezpośredniego dostępu do update w server actions
-// 					console.log(
-// 						'✅ Got new tokens, but cannot update session from server action'
-// 					);
-// 					return newTokens.access;
-// 				}
-// 			}
-// 		}
-// 	} catch (error) {
-// 		console.error('❌ Error decoding token:', error);
-// 	}
-
-// 	return session.user.accessToken;
-// }
 
 async function authorizedFetch(
 	endpoint: string | URL,
 	init: RequestInit = {},
-	retryCount = 0
+	retryCount = 0,
 ): Promise<Response> {
 	const session = await auth();
 	if (!session?.user?.accessToken) {
@@ -238,7 +199,7 @@ async function authorizedFetch(
 async function apiRequest<T>(
 	endpoint: string | URL,
 	init: RequestInit,
-	errorMessage: string
+	errorMessage: string,
 ): Promise<T> {
 	const response = await authorizedFetch(endpoint, init);
 
@@ -257,7 +218,7 @@ async function apiRequest<T>(
 			console.error('Could not read response body', error);
 		}
 		const error = new Error(
-			`${errorMessage}: ${response.status} ${response.statusText}`
+			`${errorMessage}: ${response.status} ${response.statusText}`,
 		);
 		// @ts-expect-error @typescript-eslint/ban-ts-comment
 		error.data = errorData;
@@ -280,26 +241,20 @@ export async function fetchCalendarOverview(): Promise<CalendarOverview> {
 
 	const eventsUrl = new URL(`${API_ROOT_URL}/calendar/events`);
 	eventsUrl.searchParams.set('limit', '200');
-	// Ensure category is present as a string (FastAPI will validate type)
 	eventsUrl.searchParams.set('category', '');
-
-	// Provide safe defaults for query parameters so FastAPI doesn't reject them
-	// if the backend expects certain typed query params. Use ISO strings for
-	// datetimes and string/boolean values as appropriate.
 	const now = new Date();
 	const defaultStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 days ago
 	const defaultEnd = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 days ahead
 
-	// Strings: employee_id and status (empty string is a valid string)
 	eventsUrl.searchParams.set('employee_id', '');
 	eventsUrl.searchParams.set('status', '');
-	// Datetimes: send ISO strings
+
 	eventsUrl.searchParams.set('start_from', defaultStart.toISOString());
 	eventsUrl.searchParams.set('end_to', defaultEnd.toISOString());
 
 	const medicalUrl = new URL(`${API_ROOT_URL}/calendar/medical`);
 	medicalUrl.searchParams.set('limit', '200');
-	// Medical events use the same default date range and optional string filters
+
 	medicalUrl.searchParams.set('employee_id', '');
 	medicalUrl.searchParams.set('status', '');
 	medicalUrl.searchParams.set('start_from', defaultStart.toISOString());
@@ -307,7 +262,7 @@ export async function fetchCalendarOverview(): Promise<CalendarOverview> {
 
 	const integrationsUrl = new URL(`${API_ROOT_URL}/calendar/sources`);
 	integrationsUrl.searchParams.set('limit', '100');
-	// External calendars: provider should be a string, active a boolean-like value
+
 	integrationsUrl.searchParams.set('provider', '');
 	integrationsUrl.searchParams.set('active', String(true));
 
@@ -316,17 +271,17 @@ export async function fetchCalendarOverview(): Promise<CalendarOverview> {
 			apiRequest<CalendarEventOut[]>(
 				eventsUrl,
 				{ method: 'GET' },
-				'Failed to fetch calendar events'
+				'Failed to fetch calendar events',
 			),
 			apiRequest<MedicalEventOut[]>(
 				medicalUrl,
 				{ method: 'GET' },
-				'Failed to fetch medical calendar events'
+				'Failed to fetch medical calendar events',
 			),
 			apiRequest<ExternalCalendarOut[]>(
 				integrationsUrl,
 				{ method: 'GET' },
-				'Failed to fetch external calendars'
+				'Failed to fetch external calendars',
 			),
 		]);
 
@@ -431,7 +386,7 @@ function mapMedicalEvent(event: MedicalEventOut): CalendarEvent {
 }
 
 function mapExternalCalendar(
-	integration: ExternalCalendarOut
+	integration: ExternalCalendarOut,
 ): CalendarIntegration {
 	const providerLabel = formatProviderName(integration.provider);
 	const connectionName = integration.name?.trim() || providerLabel;
@@ -482,13 +437,13 @@ function formatProviderName(provider?: string | null): string {
 
 export async function authenticate(
 	prevState: string | undefined,
-	formData: FormData
+	formData: FormData,
 ) {
 	try {
 		await signIn('credentials', {
 			email: formData.get('email'),
 			password: formData.get('password'),
-			redirectTo: '/dashboard', // NextAuth v5 uses redirectTo
+			redirectTo: '/dashboard',
 		});
 	} catch (error) {
 		if (error instanceof AuthError) {
@@ -521,7 +476,28 @@ export async function fetchEmployees(search?: string): Promise<UserDetail[]> {
 	return apiRequest<UserDetail[]>(
 		url,
 		{ method: 'GET' },
-		'Failed to fetch employees'
+		'Failed to fetch employees',
+	);
+}
+
+export async function fetchEmployee(
+	id: string | number,
+): Promise<EmployeeDetail> {
+	return apiRequest<EmployeeDetail>(
+		`employees/${id}/`,
+		{ method: 'GET' },
+		'Failed to fetch employee',
+	);
+}
+
+export async function updateEmployee(
+	id: string | number,
+	data: PatchedEmployeeDetail,
+): Promise<EmployeeDetail> {
+	return apiRequest<EmployeeDetail>(
+		`employees/${id}/`,
+		{ method: 'PATCH', body: JSON.stringify(data) },
+		'Failed to update employee',
 	);
 }
 
@@ -529,7 +505,7 @@ export async function fetchPositions(): Promise<Position[]> {
 	return apiRequest<Position[]>(
 		'positions/',
 		{ method: 'GET' },
-		'Failed to fetch positions'
+		'Failed to fetch positions',
 	);
 }
 
@@ -537,18 +513,18 @@ export async function createPosition(name: string): Promise<Position> {
 	return apiRequest<Position>(
 		'positions/',
 		{ method: 'POST', body: JSON.stringify({ name }) },
-		'Failed to create position'
+		'Failed to create position',
 	);
 }
 
 export async function updatePosition(
 	id: number,
-	name: string
+	name: string,
 ): Promise<Position> {
 	return apiRequest<Position>(
 		`positions/${id}/`,
 		{ method: 'PUT', body: JSON.stringify({ name }) },
-		'Failed to update position'
+		'Failed to update position',
 	);
 }
 
@@ -561,7 +537,7 @@ export async function deletePosition(id: number) {
 		console.error(
 			'Failed to delete position:',
 			response.status,
-			response.statusText
+			response.statusText,
 		);
 		try {
 			const errorText = await response.text();
@@ -579,7 +555,7 @@ export async function fetchCompanyCode(): Promise<CompanyCodeResponse> {
 	return apiRequest<CompanyCodeResponse>(
 		'companycode/',
 		{ method: 'GET' },
-		'Failed to fetch company code'
+		'Failed to fetch company code',
 	);
 }
 
@@ -587,7 +563,7 @@ export async function generateCompanyCode(): Promise<CompanyCodeResponse> {
 	return apiRequest<CompanyCodeResponse>(
 		'companycode/reset/',
 		{ method: 'POST' },
-		'Failed to generate company code'
+		'Failed to generate company code',
 	);
 }
 
@@ -595,24 +571,22 @@ export async function resetCompanyCode(): Promise<CompanyCodeResponse> {
 	return apiRequest<CompanyCodeResponse>(
 		'company/reset-code/',
 		{ method: 'POST' },
-		'Failed to reset company code'
+		'Failed to reset company code',
 	);
 }
 
 export async function fetchAvailability(params: {
-	employee_id: string; // Teraz wymagane!
+	employee_id: string;
 	date_from?: string;
 	date_to?: string;
 	only_with_slots?: boolean;
 	limit?: number;
 	offset?: number;
 }): Promise<AvailabilityOut[]> {
-	// Używamy pełnego URL, ponieważ schedule jest pod inną ścieżką niż accounts
 	const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
 	const fullUrl = `${baseUrl}/schedule/availability`;
 	const url = new URL(fullUrl);
 
-	// Backend FastAPI wymaga employee_id jako obowiązkowy parametr
 	url.searchParams.set('employee_id', params.employee_id);
 
 	if (params.date_from) {
@@ -623,7 +597,7 @@ export async function fetchAvailability(params: {
 	}
 	url.searchParams.set(
 		'only_with_slots',
-		String(params.only_with_slots ?? false)
+		String(params.only_with_slots ?? false),
 	);
 	url.searchParams.set('limit', String(params.limit ?? 100));
 	url.searchParams.set('offset', String(params.offset ?? 0));
@@ -631,10 +605,9 @@ export async function fetchAvailability(params: {
 	const response = await apiRequest<PaginatedResponse<AvailabilityOut>>(
 		url,
 		{ method: 'GET' },
-		'Failed to fetch availability'
+		'Failed to fetch availability',
 	);
 
-	// Zwracamy tylko tablicę results z odpowiedzi paginowanej
 	return response.results;
 }
 
@@ -648,12 +621,10 @@ export async function submitDemand(
 			amount: number;
 		}>;
 	}>,
-	locationId: string
+	locationId: string,
 ): Promise<components['schemas']['DefaultDemandOut']> {
 	const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
 	const endpoint = `${baseUrl}/schedule/demand/default/bulk`;
-
-	// Przekształć dane do formatu API
 	const payload: components['schemas']['DefaultDemandBulkIn'] = {
 		location: locationId,
 		defaults: shiftsPerDay.map((day) => ({
@@ -678,22 +649,20 @@ export async function submitDemand(
 			},
 			body: JSON.stringify(payload),
 		},
-		'Failed to submit demand'
+		'Failed to submit demand',
 	);
 
 	return response;
 }
 
 export async function fetchDefaultDemand(
-	locationId: string
+	locationId: string,
 ): Promise<components['schemas']['DefaultDemandOut']> {
 	const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
 	const fullUrl = `${baseUrl}/schedule/demand/default`;
 
-	// Dodaj parametry query
 	const url = new URL(fullUrl);
 	url.searchParams.set('location', locationId);
-	// weekday nie podajemy - chcemy wszystkie dni tygodnia
 
 	const response = await apiRequest<
 		components['schemas']['DefaultDemandOut']
@@ -702,7 +671,7 @@ export async function fetchDefaultDemand(
 		{
 			method: 'GET',
 		},
-		'Failed to fetch default demand'
+		'Failed to fetch default demand',
 	);
 
 	return response;
@@ -713,7 +682,7 @@ export async function fetchLocations(): Promise<CompanyLocationOut[]> {
 	return apiRequest<CompanyLocationOut[]>(
 		`${baseUrl}/schedule/locations`,
 		{ method: 'GET' },
-		'Failed to fetch locations'
+		'Failed to fetch locations',
 	);
 }
 
@@ -721,12 +690,11 @@ export async function generateSchedule(
 	dateFrom: string,
 	dateTo: string,
 	locationId: string,
-	force: boolean = false
+	force: boolean = false,
 ): Promise<components['schemas']['GenerateResultOut']> {
 	const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
 	const endpoint = `${baseUrl}/schedule/generate-range`;
 
-	// Używamy przekazanego locationId
 	const location = locationId;
 
 	const payload: components['schemas']['GenerateRangeIn'] = {
@@ -749,16 +717,15 @@ export async function generateSchedule(
 			},
 			body: JSON.stringify(payload),
 		},
-		'Failed to generate schedule'
+		'Failed to generate schedule',
 	);
 
 	console.dir(response, { depth: null });
 	return response;
 }
 
-// Funkcja do pobierania szczegółów pracownika
 export async function fetchEmployeeDetails(
-	employeeId: string
+	employeeId: string,
 ): Promise<UserDetail> {
 	const endpoint = `/api/accounts/employees/${employeeId}/`;
 	const response = await apiRequest<UserDetail>(
@@ -766,13 +733,13 @@ export async function fetchEmployeeDetails(
 		{
 			method: 'GET',
 		},
-		'Failed to fetch employee details'
+		'Failed to fetch employee details',
 	);
 	return response;
 }
 
 export async function updateShift(
-	shiftData: components['schemas']['ShiftUpdateIn']
+	shiftData: components['schemas']['ShiftUpdateIn'],
 ): Promise<components['schemas']['ShiftOut']> {
 	const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
 	const endpoint = `${baseUrl}/schedule/schedule/shift`;
@@ -785,7 +752,7 @@ export async function updateShift(
 			},
 			body: JSON.stringify(shiftData),
 		},
-		'Failed to update shift'
+		'Failed to update shift',
 	);
 	return response;
 }
@@ -794,7 +761,6 @@ export async function createCalendarEvent(formData: FormData) {
 	const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
 	const endpoint = `${baseUrl}/calendar/events`;
 
-	// Convert datetime-local to ISO string with timezone
 	const startAt = formData.get('start_at') as string;
 	const endAt = formData.get('end_at') as string;
 
@@ -816,18 +782,15 @@ export async function createCalendarEvent(formData: FormData) {
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(payload),
 		},
-		'Failed to create calendar event'
+		'Failed to create calendar event',
 	);
 
-	// Redirect back to calendars page after successful creation
 	redirect('/dashboard/admin/calendars');
 }
 
 export async function createMedicalEvent(formData: FormData) {
 	const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
 	const endpoint = `${baseUrl}/calendar/medical`;
-
-	// Convert datetime-local to ISO string with timezone
 	const startAt = formData.get('start_at') as string;
 	const endAt = formData.get('end_at') as string;
 
@@ -850,14 +813,12 @@ export async function createMedicalEvent(formData: FormData) {
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(payload),
 		},
-		'Failed to create medical event'
+		'Failed to create medical event',
 	);
 
-	// Redirect back to calendars page after successful creation
 	redirect('/dashboard/admin/calendars');
 }
 
-// Attendance API Types
 export interface WorkplaceConfig {
 	latitude: number;
 	longitude: number;
@@ -880,8 +841,6 @@ export interface AttendanceStatus {
 	last_activity: string | null;
 }
 
-// Attendance API Functions
-
 export async function getWorkplaceConfig(): Promise<WorkplaceConfig | null> {
 	try {
 		return await apiRequest<WorkplaceConfig>(
@@ -889,7 +848,7 @@ export async function getWorkplaceConfig(): Promise<WorkplaceConfig | null> {
 			{
 				method: 'GET',
 			},
-			'Failed to fetch workplace config'
+			'Failed to fetch workplace config',
 		);
 	} catch (error) {
 		console.error('Failed to fetch workplace config:', error);
@@ -918,7 +877,7 @@ export async function registerAttendanceEvent(data: {
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(payload),
 			},
-			'Failed to register attendance event'
+			'Failed to register attendance event',
 		);
 		return { success: true, data: response };
 	} catch (error: unknown) {
@@ -937,7 +896,7 @@ export async function getAttendanceStatus(): Promise<AttendanceStatus | null> {
 			{
 				method: 'GET',
 			},
-			'Failed to fetch attendance status'
+			'Failed to fetch attendance status',
 		);
 	} catch (error) {
 		console.error('Failed to fetch attendance status:', error);
@@ -947,13 +906,12 @@ export async function getAttendanceStatus(): Promise<AttendanceStatus | null> {
 
 export async function getAttendanceHistory(): Promise<AttendanceEvent[]> {
 	try {
-		// Assuming endpoint exists based on user request context
 		return await apiRequest<AttendanceEvent[]>(
 			'attendance/history/',
 			{
 				method: 'GET',
 			},
-			'Failed to fetch attendance history'
+			'Failed to fetch attendance history',
 		);
 	} catch (error) {
 		console.error('Failed to fetch attendance history:', error);
@@ -975,7 +933,7 @@ export async function submitAttendanceCorrection(data: {
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(data),
 		},
-		'Failed to submit attendance correction'
+		'Failed to submit attendance correction',
 	);
 }
 
@@ -987,6 +945,6 @@ export async function saveWorkplaceConfig(data: WorkplaceConfig) {
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(data),
 		},
-		'Failed to save workplace config'
+		'Failed to save workplace config',
 	);
 }

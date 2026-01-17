@@ -70,7 +70,7 @@ export default function DemandForm() {
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
 	const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() =>
-		startOfWeek(new Date(), { locale: pl, weekStartsOn: 1 })
+		startOfWeek(new Date(), { locale: pl, weekStartsOn: 1 }),
 	);
 
 	const currentWeekEnd = endOfWeek(currentWeekStart, {
@@ -78,7 +78,6 @@ export default function DemandForm() {
 		weekStartsOn: 1,
 	});
 
-	// Generuj daty dla każdego dnia tygodnia
 	const weekDays = Array.from({ length: 7 }, (_, i) => {
 		const date = addDays(currentWeekStart, i);
 		return {
@@ -92,7 +91,7 @@ export default function DemandForm() {
 		DAYS_OF_WEEK.map((day) => ({
 			day,
 			shifts: [createEmptyShift()],
-		}))
+		})),
 	);
 
 	const handlePreviousWeek = () => {
@@ -105,36 +104,29 @@ export default function DemandForm() {
 
 	const handleCurrentWeek = () => {
 		setCurrentWeekStart(
-			startOfWeek(new Date(), { locale: pl, weekStartsOn: 1 })
+			startOfWeek(new Date(), { locale: pl, weekStartsOn: 1 }),
 		);
 	};
-
-	// Sprawdź czy aktualnie wyświetlany tydzień to obecny tydzień
 	const isCurrentWeek = isSameWeek(currentWeekStart, new Date(), {
 		locale: pl,
 		weekStartsOn: 1,
 	});
-
-	// Załaduj domyślne zapotrzebowanie przy montowaniu komponentu
 	useEffect(() => {
 		const loadDefaultDemand = async () => {
 			if (!selectedLocation) return;
 			try {
 				setIsLoading(true);
 				const defaultDemand = await fetchDefaultDemand(
-					selectedLocation.id.toString()
+					selectedLocation.id.toString(),
 				);
-
-				// Przekształć dane z API do formatu formularza
 				if (
 					defaultDemand.defaults &&
 					defaultDemand.defaults.length > 0
 				) {
 					const loadedShifts: DayShifts[] = DAYS_OF_WEEK.map(
 						(dayName, dayIndex) => {
-							// Znajdź dane dla tego dnia tygodnia
 							const dayData = defaultDemand.defaults.find(
-								(d) => d.weekday === dayIndex
+								(d) => d.weekday === dayIndex,
 							);
 
 							if (dayData && dayData.items.length > 0) {
@@ -149,20 +141,17 @@ export default function DemandForm() {
 									})),
 								};
 							}
-
-							// Jeśli brak danych dla tego dnia, użyj pustej zmiany
 							return {
 								day: dayName,
 								shifts: [createEmptyShift()],
 							};
-						}
+						},
 					);
 
 					setDayShifts(loadedShifts);
 				}
 			} catch {
-				console.log('ℹ️ No default demand found, using empty form');
-				// Nie pokazujemy alertu - to normalna sytuacja dla nowego użytkownika
+				console.log('No default demand found, using empty form');
 			} finally {
 				setIsLoading(false);
 			}
@@ -196,12 +185,12 @@ export default function DemandForm() {
 		dayIndex: number,
 		shiftId: string,
 		field: keyof Shift,
-		value: string | boolean | number
+		value: string | boolean | number,
 	) => {
 		setDayShifts((prev) => {
 			const newDayShifts = [...prev];
 			const shiftIndex = newDayShifts[dayIndex].shifts.findIndex(
-				(s) => s.id === shiftId
+				(s) => s.id === shiftId,
 			);
 			if (shiftIndex !== -1) {
 				newDayShifts[dayIndex].shifts[shiftIndex] = {
@@ -228,9 +217,8 @@ export default function DemandForm() {
 		setIsSubmitting(true);
 
 		try {
-			// Przekształć dane formularza do nowego formatu API
 			const shiftsPerDay = dayShifts.map((dayData, dayIndex) => ({
-				weekday: dayIndex, // 0 = Poniedziałek, 6 = Niedziela
+				weekday: dayIndex,
 				shifts: dayData.shifts.map((shift) => ({
 					timeFrom: shift.timeFrom,
 					timeTo: shift.timeTo,
@@ -241,7 +229,7 @@ export default function DemandForm() {
 
 			const result = await submitDemand(
 				shiftsPerDay,
-				selectedLocation.id.toString()
+				selectedLocation.id.toString(),
 			);
 
 			showAlert({
@@ -250,9 +238,9 @@ export default function DemandForm() {
 				variant: 'success',
 			});
 
-			console.log('✅ Default demand saved:', result);
+			console.log('Default demand saved:', result);
 		} catch (error) {
-			console.error('❌ Error submitting demand:', error);
+			console.error('Error submitting demand:', error);
 			showAlert({
 				title: 'Błąd',
 				description:
@@ -381,7 +369,7 @@ export default function DemandForm() {
 																		shift.id,
 																		'timeFrom',
 																		e.target
-																			.value
+																			.value,
 																	)
 																}
 																className='max-w-[120px] bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none'
@@ -407,7 +395,7 @@ export default function DemandForm() {
 																		shift.id,
 																		'timeTo',
 																		e.target
-																			.value
+																			.value,
 																	)
 																}
 																className='max-w-[120px] bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none'
@@ -427,13 +415,13 @@ export default function DemandForm() {
 																	shift.experienced
 																}
 																onCheckedChange={(
-																	checked
+																	checked,
 																) =>
 																	updateShift(
 																		dayIndex,
 																		shift.id,
 																		'experienced',
-																		checked
+																		checked,
 																	)
 																}
 															/>
@@ -460,8 +448,8 @@ export default function DemandForm() {
 																		parseInt(
 																			e
 																				.target
-																				.value
-																		) || 1
+																				.value,
+																		) || 1,
 																	)
 																}
 																min='1'
@@ -480,7 +468,7 @@ export default function DemandForm() {
 															onClick={() =>
 																removeShift(
 																	dayIndex,
-																	shift.id
+																	shift.id,
 																)
 															}>
 															<Trash2 className='h-4 w-4' />

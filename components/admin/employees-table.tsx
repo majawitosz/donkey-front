@@ -13,17 +13,15 @@ import {
 	useReactTable,
 	VisibilityState,
 } from '@tanstack/react-table';
-import { ArrowUpDown, ChevronDown, MoreHorizontal } from 'lucide-react';
+import { ArrowUpDown, ChevronDown, CircleChevronRight } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { fetchEmployees } from '@/lib/actions';
+import { Link } from '@/i18n/navigation';
 import {
 	DropdownMenu,
 	DropdownMenuCheckboxItem,
 	DropdownMenuContent,
-	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
@@ -62,7 +60,7 @@ export default function EmployeesTable() {
 							variant='ghost'
 							onClick={() =>
 								column.toggleSorting(
-									column.getIsSorted() === 'asc'
+									column.getIsSorted() === 'asc',
 								)
 							}>
 							{t('email')}
@@ -82,7 +80,7 @@ export default function EmployeesTable() {
 							variant='ghost'
 							onClick={() =>
 								column.toggleSorting(
-									column.getIsSorted() === 'asc'
+									column.getIsSorted() === 'asc',
 								)
 							}>
 							{t('firstName')}
@@ -100,7 +98,7 @@ export default function EmployeesTable() {
 							variant='ghost'
 							onClick={() =>
 								column.toggleSorting(
-									column.getIsSorted() === 'asc'
+									column.getIsSorted() === 'asc',
 								)
 							}>
 							{t('lastName')}
@@ -118,7 +116,7 @@ export default function EmployeesTable() {
 							variant='ghost'
 							onClick={() =>
 								column.toggleSorting(
-									column.getIsSorted() === 'asc'
+									column.getIsSorted() === 'asc',
 								)
 							}>
 							{t('role')}
@@ -138,7 +136,7 @@ export default function EmployeesTable() {
 							variant='ghost'
 							onClick={() =>
 								column.toggleSorting(
-									column.getIsSorted() === 'asc'
+									column.getIsSorted() === 'asc',
 								)
 							}>
 							{t('createdAt')}
@@ -159,7 +157,7 @@ export default function EmployeesTable() {
 							variant='ghost'
 							onClick={() =>
 								column.toggleSorting(
-									column.getIsSorted() === 'asc'
+									column.getIsSorted() === 'asc',
 								)
 							}>
 							{t('positionName')}
@@ -177,7 +175,7 @@ export default function EmployeesTable() {
 							variant='ghost'
 							onClick={() =>
 								column.toggleSorting(
-									column.getIsSorted() === 'asc'
+									column.getIsSorted() === 'asc',
 								)
 							}>
 							{t('experienceYears')}
@@ -196,41 +194,20 @@ export default function EmployeesTable() {
 					const employee = row.original;
 
 					return (
-						<DropdownMenu>
-							<DropdownMenuTrigger asChild>
-								<Button variant='ghost' className='h-8 w-8 p-0'>
-									<span className='sr-only'>
-										{t('openMenu')}
-									</span>
-									<MoreHorizontal />
-								</Button>
-							</DropdownMenuTrigger>
-							<DropdownMenuContent align='end'>
-								<DropdownMenuLabel>
-									{t('actions')}
-								</DropdownMenuLabel>
-								<DropdownMenuItem
-									onClick={() =>
-										navigator.clipboard.writeText(
-											employee.id.toString()
-										)
-									}>
-									{t('copyId')}
-								</DropdownMenuItem>
-								<DropdownMenuSeparator />
-								<DropdownMenuItem>
-									{t('viewEmployee')}
-								</DropdownMenuItem>
-								<DropdownMenuItem>
+						<Button variant='ghost' asChild className='h-8 w-8 p-0'>
+							<Link
+								href={`/dashboard/admin/employees/${employee.id}`}>
+								<CircleChevronRight className='h-4 w-4' />
+								<span className='sr-only'>
 									{t('editEmployee')}
-								</DropdownMenuItem>
-							</DropdownMenuContent>
-						</DropdownMenu>
+								</span>
+							</Link>
+						</Button>
 					);
 				},
 			},
 		],
-		[t]
+		[t],
 	);
 
 	const loadEmployees = React.useCallback(
@@ -245,7 +222,7 @@ export default function EmployeesTable() {
 				if (isInitial) setLoading(false);
 			}
 		},
-		[]
+		[],
 	);
 
 	React.useEffect(() => {
@@ -255,7 +232,7 @@ export default function EmployeesTable() {
 	React.useEffect(() => {
 		const timeoutId = setTimeout(() => {
 			loadEmployees(search, false);
-		}, 300); // Debounce search
+		}, 300);
 		return () => clearTimeout(timeoutId);
 	}, [search, loadEmployees]);
 
@@ -332,8 +309,8 @@ export default function EmployeesTable() {
 												: flexRender(
 														header.column.columnDef
 															.header,
-														header.getContext()
-												  )}
+														header.getContext(),
+													)}
 										</TableHead>
 									);
 								})}
@@ -348,7 +325,7 @@ export default function EmployeesTable() {
 										<TableCell key={cell.id}>
 											{flexRender(
 												cell.column.columnDef.cell,
-												cell.getContext()
+												cell.getContext(),
 											)}
 										</TableCell>
 									))}

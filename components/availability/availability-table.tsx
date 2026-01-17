@@ -30,7 +30,6 @@ import WeeklyAvailabilityView from './weekly-availability-view';
 
 type AvailabilityOut = components['schemas']['AvailabilityOut'];
 
-// Grupujemy dane po pracowniku
 type EmployeeAvailability = {
 	employee_id: string;
 	employee_name: string;
@@ -43,11 +42,11 @@ type EmployeeAvailability = {
 
 export default function AvailabilityTable() {
 	const [employees, setEmployees] = React.useState<EmployeeAvailability[]>(
-		[]
+		[],
 	);
 	const [loading, setLoading] = React.useState(true);
 	const [currentWeekStart, setCurrentWeekStart] = React.useState<Date>(() =>
-		startOfWeek(new Date(), { locale: pl, weekStartsOn: 1 })
+		startOfWeek(new Date(), { locale: pl, weekStartsOn: 1 }),
 	);
 	const [sorting, setSorting] = React.useState<SortingState>([]);
 	const [selectedEmployee, setSelectedEmployee] = React.useState<{
@@ -63,7 +62,6 @@ export default function AvailabilityTable() {
 		weekStartsOn: 1,
 	});
 
-	// Generujemy dni tygodnia
 	const weekDays = React.useMemo(() => {
 		const days: Date[] = [];
 		for (let i = 0; i < 7; i++) {
@@ -71,8 +69,8 @@ export default function AvailabilityTable() {
 				new Date(
 					currentWeekStart.getFullYear(),
 					currentWeekStart.getMonth(),
-					currentWeekStart.getDate() + i
-				)
+					currentWeekStart.getDate() + i,
+				),
 			);
 		}
 		return days;
@@ -116,9 +114,8 @@ export default function AvailabilityTable() {
 			header: 'Dostępność w tygodniu',
 			cell: ({ row }) => {
 				const employee = row.original;
-				// Pobierz wszystkie dostępności tego pracownika dla tego tygodnia
 				const employeeAvailability = availabilityData.filter(
-					(av) => av.employee_id === employee.employee_id
+					(av) => av.employee_id === employee.employee_id,
 				);
 
 				return (
@@ -126,7 +123,7 @@ export default function AvailabilityTable() {
 						{weekDays.map((day) => {
 							const dateStr = format(day, 'yyyy-MM-dd');
 							const dayAvailability = employeeAvailability.find(
-								(av) => av.date === dateStr
+								(av) => av.date === dateStr,
 							);
 
 							return (
@@ -148,15 +145,15 @@ export default function AvailabilityTable() {
 														className='bg-green-500/90 dark:bg-green-600/80 rounded-sm text-white text-[9px] font-medium text-center py-0.5 px-0.5'>
 														{slot.start.substring(
 															0,
-															5
+															5,
 														)}{' '}
 														-{' '}
 														{slot.end.substring(
 															0,
-															5
+															5,
 														)}
 													</div>
-												)
+												),
 											)}
 										</div>
 									) : (
@@ -220,17 +217,12 @@ export default function AvailabilityTable() {
 				weekStartsOn: 1,
 			});
 
-			// Najpierw pobieramy listę pracowników
 			const employeesData = await fetchEmployees();
-
-			// Tworzymy mapę employee_id -> nazwa pracownika
 			const employeeNamesMap = new Map<string, string>();
 			employeesData.forEach((emp) => {
 				const fullName = `${emp.first_name} ${emp.last_name}`.trim();
 				employeeNamesMap.set(String(emp.id), fullName);
 			});
-
-			// Teraz dla każdego pracownika pobieramy availability (backend wymaga employee_id)
 			const allAvailabilityData: AvailabilityOut[] = [];
 
 			for (const emp of employeesData) {
@@ -244,13 +236,11 @@ export default function AvailabilityTable() {
 				} catch (error) {
 					console.error(
 						`Failed to fetch availability for employee ${emp.id}:`,
-						error
+						error,
 					);
-					// Kontynuuj dla innych pracowników
 				}
 			}
 
-			// Grupujemy dane po pracownikach
 			const employeeMap = new Map<string, EmployeeAvailability>();
 
 			allAvailabilityData.forEach((item) => {
@@ -279,7 +269,6 @@ export default function AvailabilityTable() {
 			});
 
 			setEmployees(Array.from(employeeMap.values()));
-			// Zapisujemy dane dostępności dla późniejszego użycia w szczegółowym widoku
 			setAvailabilityData(allAvailabilityData);
 		} catch (error) {
 			console.error('Error fetching availability:', error);
@@ -303,7 +292,7 @@ export default function AvailabilityTable() {
 
 	const handleCurrentWeek = () => {
 		setCurrentWeekStart(
-			startOfWeek(new Date(), { locale: pl, weekStartsOn: 1 })
+			startOfWeek(new Date(), { locale: pl, weekStartsOn: 1 }),
 		);
 	};
 
@@ -394,11 +383,11 @@ export default function AvailabilityTable() {
 																					.column
 																					.columnDef
 																					.header,
-																				header.getContext()
-																		  )}
+																				header.getContext(),
+																			)}
 																</TableHead>
 															);
-														}
+														},
 													)}
 												</TableRow>
 											))}
@@ -421,7 +410,7 @@ export default function AvailabilityTable() {
 																			.column
 																			.columnDef
 																			.cell,
-																		cell.getContext()
+																		cell.getContext(),
 																	)}
 																</TableCell>
 															))}
@@ -466,7 +455,7 @@ export default function AvailabilityTable() {
 					employeeId={selectedEmployee.id}
 					weekStart={currentWeekStart}
 					availabilityData={availabilityData.filter(
-						(av) => av.employee_id === selectedEmployee.id
+						(av) => av.employee_id === selectedEmployee.id,
 					)}
 					onClose={() => setSelectedEmployee(null)}
 				/>

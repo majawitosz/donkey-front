@@ -40,29 +40,25 @@ const generateHours = () => {
 };
 
 const hours = generateHours();
-const HOUR_HEIGHT = 40; // Wysokość jednej godziny w pikselach
+const HOUR_HEIGHT = 40;
 
-// Konwertuje czas (HH:MM) na offset w pikselach od początku dnia
 const timeToPixels = (time: string): number => {
 	const [h, m] = time.split(':').map(Number);
 	const totalMinutes = (h - START_HOUR) * 60 + m;
 	return (totalMinutes / 60) * HOUR_HEIGHT;
 };
 
-// Pobiera zmiany dla konkretnego dnia
 const getShiftsForDay = (
 	date: Date,
-	scheduleData: GenerateResultOut
+	scheduleData: GenerateResultOut,
 ): ScheduleShiftOut[] => {
 	const dateStr = format(date, 'yyyy-MM-dd');
 	return scheduleData.assignments.filter((shift) => shift.date === dateStr);
 };
 
-// Pomocnicza funkcja do sortowania segmentów czasu
 const sortTimeSegments = (a: { start: string }, b: { start: string }) =>
 	a.start.localeCompare(b.start);
 
-// Komponent zbiorczego bloku dnia
 function DaySummaryBlock({
 	shifts,
 	onScheduleUpdate,
@@ -73,8 +69,6 @@ function DaySummaryBlock({
 	employeeNames: Record<string, string>;
 }) {
 	const [dialogOpen, setDialogOpen] = React.useState(false);
-
-	// Stan edycji konkretnego pracownika
 	const [editingEmployee, setEditingEmployee] = React.useState<{
 		shiftId: string;
 		employee: ShiftAssignedEmployeeOut;
@@ -84,14 +78,11 @@ function DaySummaryBlock({
 
 	const [newStartTime, setNewStartTime] = React.useState('');
 	const [newEndTime, setNewEndTime] = React.useState('');
-
-	// 1. Obliczamy ramy czasowe całego bloku (min start, max end)
-	// Używamy wszystkich czasów start i end ze shiftów
 	const times = shifts.flatMap((s) =>
 		[s.start, s.end].map((t) => {
 			const [h, m] = t.split(':').map(Number);
 			return h * 60 + m;
-		})
+		}),
 	);
 
 	const minMinutes = Math.min(...times);
@@ -107,20 +98,17 @@ function DaySummaryBlock({
 	const top = timeToPixels(minTimeStr);
 	const height = timeToPixels(maxTimeStr) - top;
 
-	// 2. Obliczamy statystyki
 	let totalDemand = 0;
 	let totalAssigned = 0;
 	let hasUnstaffed = false;
 
 	shifts.forEach((s) => {
 		totalDemand += s.demand;
-		// Liczymy unikalnych pracowników w obrębie jednej zmiany (powinno być 1:1, ale dla pewności length)
 		const assignedCount = s.assigned_employees.length;
 		totalAssigned += assignedCount;
 		if (assignedCount < s.demand) hasUnstaffed = true;
 	});
 
-	// Kolorowanie bloku
 	let bgColor = 'bg-blue-500/90 dark:bg-blue-600/80';
 	let borderColor = 'border-blue-600';
 
@@ -132,21 +120,16 @@ function DaySummaryBlock({
 		borderColor = 'border-orange-600';
 	}
 
-	// Agregacja danych do dialogu
-	// a) Braki kadrowe
 	const allMissingSegments = shifts
 		.flatMap((s) =>
 			(s.missing_segments || []).map((ms) => ({
 				...ms,
-				// Obliczamy ile brakuje, używając missing z API, lub fallback do demand-assigned
 				calculatedMissing:
 					ms.missing ??
 					Math.max(1, s.demand - s.assigned_employees.length),
-			}))
+			})),
 		)
 		.sort(sortTimeSegments);
-
-	// b) Przypisani pracownicy (spłaszczamy strukturę)
 	const allAssignedDetails = shifts
 		.flatMap((s) =>
 			(s.assigned_employees_detail || []).map((emp) => ({
@@ -157,11 +140,10 @@ function DaySummaryBlock({
 					employeeNames[emp.employee_id] ||
 					emp.employee_name ||
 					'Pracownik',
-			}))
+			})),
 		)
 		.sort((a, b) => a.employeeName.localeCompare(b.employeeName));
 
-	// Renderowanie bloku na siatce
 	return (
 		<>
 			<div
@@ -266,19 +248,19 @@ function DaySummaryBlock({
 																					seg,
 																				employeeName:
 																					item.employeeName,
-																			}
+																			},
 																		);
 																		setNewStartTime(
-																			seg.start
+																			seg.start,
 																		);
 																		setNewEndTime(
-																			seg.end
+																			seg.end,
 																		);
 																	}}>
 																	Edytuj
 																</Button>
 															</div>
-														)
+														),
 													)}
 												</div>
 											</div>
@@ -301,7 +283,6 @@ function DaySummaryBlock({
 							</div>
 						</div>
 					) : (
-						// Formularz edycji (uproszczony)
 						<div className='space-y-4 py-2'>
 							<div className='text-sm text-muted-foreground mb-4 p-3 bg-muted rounded-md'>
 								Edycja godzin dla:{' '}
@@ -344,15 +325,12 @@ function DaySummaryBlock({
 								<Button
 									onClick={async () => {
 										try {
-											// Znajdź oryginalny shift, w którym jest ten pracownik
 											const targetShift = shifts.find(
 												(s) =>
 													s.id ===
-													editingEmployee.shiftId
+													editingEmployee.shiftId,
 											);
 											if (!targetShift) return;
-
-											// Aktualizujemy dane pracownika w tym shifcie
 											const updatedEmployees = (
 												targetShift.assigned_employees_detail ||
 												[]
@@ -362,11 +340,10 @@ function DaySummaryBlock({
 													editingEmployee.employee
 														.employee_id
 												) {
-													// Tworzymy nową listę segmentów
 													const newSegments = [
 														...emp.segments,
 													];
-													// Znajdź segment do zastąpienia
+
 													const segIdx =
 														newSegments.findIndex(
 															(s) =>
@@ -377,14 +354,14 @@ function DaySummaryBlock({
 																s.end ===
 																	editingEmployee
 																		.segment
-																		.end
+																		.end,
 														);
 
 													if (segIdx !== -1) {
 														newSegments[segIdx] = {
 															start: newStartTime,
 															end: newEndTime,
-															minutes: 0, // API przeliczy
+															minutes: 0,
 														};
 													}
 													return {
@@ -401,12 +378,11 @@ function DaySummaryBlock({
 													updatedEmployees,
 											});
 
-											setEditingEmployee(null); // Wróć do widoku dnia
+											setEditingEmployee(null);
 											if (onScheduleUpdate)
 												onScheduleUpdate();
 										} catch (err) {
 											console.error(err);
-											// Opcjonalnie: alert o błędzie
 										}
 									}}>
 									Zapisz
@@ -420,7 +396,6 @@ function DaySummaryBlock({
 	);
 }
 
-// Komponent kolumny dnia
 function DayColumn({
 	shifts,
 	onScheduleUpdate,
@@ -431,7 +406,6 @@ function DayColumn({
 	onScheduleUpdate?: () => void;
 	employeeNames: Record<string, string>;
 }) {
-	// Jeśli nie ma zmian w tym dniu, renderujemy pustą kolumnę
 	if (!shifts || shifts.length === 0) {
 		return (
 			<div className='relative border-r last:border-r-0 h-full'>
@@ -439,8 +413,6 @@ function DayColumn({
 			</div>
 		);
 	}
-
-	// Renderujemy jeden zagregowany blok na cały dzień
 	return (
 		<div
 			className='relative border-r last:border-r-0'
@@ -463,7 +435,6 @@ export default function WeeklyScheduleView({
 		Record<string, string>
 	>({});
 
-	// Pobierz imiona i nazwiska wszystkich pracowników
 	React.useEffect(() => {
 		const fetchAllEmployeeNames = async () => {
 			const uniqueEmployeeIds = new Set<string>();
@@ -471,14 +442,12 @@ export default function WeeklyScheduleView({
 				shift.assigned_employees_detail?.forEach((employee) => {
 					uniqueEmployeeIds.add(employee.employee_id);
 				});
-				// Również z listy ID jeśli detali brakuje
 				shift.assigned_employees.forEach((id) =>
-					uniqueEmployeeIds.add(id)
+					uniqueEmployeeIds.add(id),
 				);
 			});
 
 			const names: Record<string, string> = {};
-			// Optymalizacja: pobieraj równolegle
 			const promises = Array.from(uniqueEmployeeIds).map(
 				async (employeeId) => {
 					try {
@@ -490,11 +459,11 @@ export default function WeeklyScheduleView({
 					} catch (error) {
 						console.error(
 							`Failed to fetch employee ${employeeId}:`,
-							error
+							error,
 						);
 						return { id: employeeId, name: 'Nieznany pracownik' };
 					}
-				}
+				},
 			);
 
 			const results = await Promise.all(promises);
@@ -509,8 +478,6 @@ export default function WeeklyScheduleView({
 			fetchAllEmployeeNames();
 		}
 	}, [scheduleData]);
-
-	// Oblicz podsumowanie godzin dla pracowników
 	const employeeHoursSummary = React.useMemo(() => {
 		const hoursMap = new Map<
 			string,
@@ -524,10 +491,7 @@ export default function WeeklyScheduleView({
 					employee.employee_name ||
 					'Ładowanie...';
 				const employeeId = employee.employee_id;
-
-				// Oblicz godziny dla tego pracownika w tej zmianie
 				let totalMinutes = 0;
-				// Jeśli są segmenty to sumujemy segmenty, jeśli nie to bierzemy główne start/end pracownika
 				if (employee.segments && employee.segments.length > 0) {
 					employee.segments.forEach((segment) => {
 						const [startH, startM] = segment.start
@@ -567,7 +531,7 @@ export default function WeeklyScheduleView({
 		});
 
 		return Array.from(hoursMap.values()).sort((a, b) =>
-			a.name.localeCompare(b.name, 'pl')
+			a.name.localeCompare(b.name, 'pl'),
 		);
 	}, [scheduleData, employeeNames]);
 
@@ -585,14 +549,10 @@ export default function WeeklyScheduleView({
 
 			<div className='overflow-x-auto'>
 				<div className='min-w-[900px]'>
-					{/* Kalendarz w stylu Google Calendar */}
 					<div className='grid grid-cols-8 border rounded-lg overflow-hidden relative'>
-						{/* Pusta komórka dla nagłówka czasu */}
 						<div className='bg-muted border-r border-b p-2 text-xs font-semibold text-center'>
 							Godzina
 						</div>
-
-						{/* Nagłówki dni tygodnia */}
 						{weekDays.map((day, idx) => (
 							<div
 								key={idx}
@@ -621,23 +581,19 @@ export default function WeeklyScheduleView({
 										className='border-r last:border-r-0 border-b relative'
 										style={{
 											height: `${HOUR_HEIGHT}px`,
-										}}>
-										{/* Linie pomocnicze półgodzinne opcjonalnie */}
-									</div>
+										}}></div>
 								))}
 							</React.Fragment>
 						))}
 
-						{/* Warstwa danych - pozycjonowana absolutnie na siatce */}
 						<div className='absolute top-[37px] left-0 right-0 bottom-0 grid grid-cols-8 pointer-events-none'>
 							{/* Pusta kolumna nad godzinami */}
 							<div />
-
 							{/* Kolumny z danymi */}
 							{weekDays.map((day, dayIdx) => {
 								const dayShifts = getShiftsForDay(
 									day,
-									scheduleData
+									scheduleData,
 								);
 								return (
 									<div
@@ -676,10 +632,8 @@ export default function WeeklyScheduleView({
 			</div>
 
 			{/* Podsumowanie */}
-
 			<div className='mt-4 p-4  rounded-lg'>
 				<h4 className='font-semibold mb-2'>Podsumowanie</h4>
-
 				{/* Podsumowanie godzin pracowników */}
 				<div className='grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3'>
 					{employeeHoursSummary.map((employee) => (

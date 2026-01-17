@@ -21,7 +21,7 @@ export default function ScheduleGenerator() {
 	const { showAlert } = useAlert();
 	const [loading, setLoading] = React.useState(false);
 	const [currentWeekStart, setCurrentWeekStart] = React.useState<Date>(() =>
-		startOfWeek(new Date(), { locale: pl, weekStartsOn: 1 })
+		startOfWeek(new Date(), { locale: pl, weekStartsOn: 1 }),
 	);
 	const [generatedSchedule, setGeneratedSchedule] =
 		React.useState<GenerateResultOut | null>(null);
@@ -31,7 +31,6 @@ export default function ScheduleGenerator() {
 		weekStartsOn: 1,
 	});
 
-	// Automatycznie ładuj grafik przy montowaniu i zmianie tygodnia
 	React.useEffect(() => {
 		const loadSchedule = async () => {
 			if (!selectedLocation) return;
@@ -39,13 +38,11 @@ export default function ScheduleGenerator() {
 			try {
 				const dateFrom = format(currentWeekStart, 'yyyy-MM-dd');
 				const dateTo = format(currentWeekEnd, 'yyyy-MM-dd');
-
-				// force: false - tylko załaduj istniejący grafik
 				const result = await generateSchedule(
 					dateFrom,
 					dateTo,
 					selectedLocation.id.toString(),
-					false
+					false,
 				);
 
 				setGeneratedSchedule(result);
@@ -67,34 +64,30 @@ export default function ScheduleGenerator() {
 
 		loadSchedule();
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [currentWeekStart, selectedLocation]); // Reaguj tylko na zmianę tygodnia
+	}, [currentWeekStart, selectedLocation]);
 
-	// Funkcja do odświeżania grafiku (dla edycji)
 	const refreshSchedule = React.useCallback(async () => {
 		if (!selectedLocation) return;
 		setLoading(true);
 		try {
 			const dateFrom = format(currentWeekStart, 'yyyy-MM-dd');
 			const dateTo = format(currentWeekEnd, 'yyyy-MM-dd');
-
-			// force: false - tylko załaduj istniejący grafik
 			const result = await generateSchedule(
 				dateFrom,
 				dateTo,
 				selectedLocation.id.toString(),
-				false
+				false,
 			);
 
 			setGeneratedSchedule(result);
-			console.log('✅ Schedule refreshed:', result);
+			console.log('Schedule refreshed:', result);
 		} catch (error) {
-			console.error('❌ Error refreshing schedule:', error);
+			console.error('Error refreshing schedule:', error);
 		} finally {
 			setLoading(false);
 		}
 	}, [currentWeekStart, currentWeekEnd, selectedLocation]);
 
-	// Funkcja do regenerowania grafiku (force: true)
 	const regenerateSchedule = React.useCallback(async () => {
 		if (!selectedLocation) {
 			showAlert({
@@ -109,13 +102,11 @@ export default function ScheduleGenerator() {
 		try {
 			const dateFrom = format(currentWeekStart, 'yyyy-MM-dd');
 			const dateTo = format(currentWeekEnd, 'yyyy-MM-dd');
-
-			// force: true - wygeneruj ponownie od zera
 			const result = await generateSchedule(
 				dateFrom,
 				dateTo,
 				selectedLocation.id.toString(),
-				true
+				true,
 			);
 
 			setGeneratedSchedule(result);
@@ -124,9 +115,9 @@ export default function ScheduleGenerator() {
 				description: 'Grafik został wygenerowany ponownie',
 				variant: 'success',
 			});
-			console.log('✅ Schedule regenerated:', result);
+			console.log('Schedule regenerated:', result);
 		} catch (error) {
-			console.error('❌ Error regenerating schedule:', error);
+			console.error('Error regenerating schedule:', error);
 			showAlert({
 				title: 'Błąd',
 				description:
@@ -150,7 +141,7 @@ export default function ScheduleGenerator() {
 
 	const handleCurrentWeek = () => {
 		setCurrentWeekStart(
-			startOfWeek(new Date(), { locale: pl, weekStartsOn: 1 })
+			startOfWeek(new Date(), { locale: pl, weekStartsOn: 1 }),
 		);
 	};
 

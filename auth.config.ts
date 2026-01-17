@@ -20,14 +20,13 @@ export const authConfig = {
 				if (isLoggedIn) return true;
 				return Response.redirect(new URL(`/${locale}/login`, nextUrl));
 			} else if (isLoggedIn) {
-				// Prevent redirect loop if already on dashboard
 				if (isOnDashboard) return true;
 				return Response.redirect(
-					new URL(`/${locale}/dashboard`, nextUrl)
+					new URL(`/${locale}/dashboard`, nextUrl),
 				);
 			}
 			return true;
 		},
 	},
-	providers: [], // Add providers with an empty array for now
+	providers: [],
 } satisfies NextAuthConfig;

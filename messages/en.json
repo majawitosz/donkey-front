@@ -173,5 +173,33 @@
 		"areYouSure": "Are you sure?",
 		"deleteWarning": "This action is irreversible. It will permanently delete the position \"{name}\".",
 		"delete": "Delete"
+	},
+	"EmployeeDetails": {
+		"title": "Employee details: {name}",
+		"personalInfo": "Personal Information",
+		"firstName": "First Name",
+		"lastName": "Last Name",
+		"email": "Email",
+		"roleAndPosition": "Role & Position",
+		"role": "Role",
+		"position": "Position",
+		"selectRole": "Select a role",
+		"selectPosition": "Select a position",
+		"roleDescription": "Warning: Changing role modifies permissions.",
+		"roles": {
+			"owner": "Owner",
+			"manager": "Manager",
+			"employee": "Employee"
+		},
+		"experienceYears": "Experience (years)",
+		"settings": "Settings",
+		"isActive": "Active account",
+		"isActiveDescription": "Deactivate to block access.",
+		"notes": "Notes",
+		"notesPlaceholder": "Add notes about employee...",
+		"saveChanges": "Save changes",
+		"saving": "Saving...",
+		"successMessage": "Employee details updated successfully.",
+		"errorMessage": "Failed to update employee details."
 	}
 }

@@ -173,5 +173,33 @@
 		"areYouSure": "Czy na pewno?",
 		"deleteWarning": "Ta akcja jest nieodwracalna. Spowoduje trwałe usunięcie stanowiska \"{name}\".",
 		"delete": "Usuń"
+	},
+	"EmployeeDetails": {
+		"title": "Szczegóły pracownika: {name}",
+		"personalInfo": "Dane osobowe",
+		"firstName": "Imię",
+		"lastName": "Nazwisko",
+		"email": "Email",
+		"roleAndPosition": "Rola i Stanowisko",
+		"role": "Rola",
+		"position": "Stanowisko",
+		"selectRole": "Wybierz rolę",
+		"selectPosition": "Wybierz stanowisko",
+		"roleDescription": "Uwaga: Zmiana roli wpłynie na uprawnienia.",
+		"roles": {
+			"owner": "Właściciel",
+			"manager": "Menedżer",
+			"employee": "Pracownik"
+		},
+		"experienceYears": "Doświadczenie (lata)",
+		"settings": "Ustawienia",
+		"isActive": "Konto aktywne",
+		"isActiveDescription": "Dezaktywuj, aby zablokować dostęp.",
+		"notes": "Notatki",
+		"notesPlaceholder": "Dodaj notatki o pracowniku...",
+		"saveChanges": "Zapisz zmiany",
+		"saving": "Zapisywanie...",
+		"successMessage": "Zaktualizowano dane pracownika.",
+		"errorMessage": "Nie udało się zaktualizować danych."
 	}
 }

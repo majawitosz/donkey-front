@@ -141,8 +141,8 @@ export function CalendarDashboard({
 				const endDate = normalizeEndDate(startDate, endDateRaw);
 				const allDayFlag = Boolean(
 					event.all_day ??
-						event.allDay ??
-						isAllDayEvent(startDate, endDate)
+					event.allDay ??
+					isAllDayEvent(startDate, endDate),
 				);
 				const durationMinutes =
 					startDate && endDate
@@ -158,22 +158,22 @@ export function CalendarDashboard({
 					durationMinutes,
 				};
 			}),
-		[events]
+		[events],
 	);
 
 	const eventsByCategory = React.useMemo(() => {
 		return {
 			schedule: eventsWithMeta.filter(
-				(event) => event.category === 'schedule'
+				(event) => event.category === 'schedule',
 			),
 			vacation: eventsWithMeta.filter(
-				(event) => event.category === 'vacation'
+				(event) => event.category === 'vacation',
 			),
 			training: eventsWithMeta.filter(
-				(event) => event.category === 'training'
+				(event) => event.category === 'training',
 			),
 			medical: eventsWithMeta.filter(
-				(event) => event.category === 'medical'
+				(event) => event.category === 'medical',
 			),
 		} satisfies Record<CalendarCategory, EnrichedCalendarEvent[]>;
 	}, [eventsWithMeta]);
@@ -185,7 +185,7 @@ export function CalendarDashboard({
 				...CATEGORY_CONFIG[key],
 				events: eventsByCategory[key],
 			})),
-		[eventsByCategory]
+		[eventsByCategory],
 	);
 
 	const [activeTab, setActiveTab] =
@@ -194,7 +194,7 @@ export function CalendarDashboard({
 	React.useEffect(() => {
 		if (!eventsByCategory[activeTab]?.length) {
 			const firstWithEvents = tabConfig.find(
-				(tab) => tab.events.length > 0
+				(tab) => tab.events.length > 0,
 			);
 			if (firstWithEvents) {
 				setActiveTab(firstWithEvents.value);
@@ -283,14 +283,12 @@ function CalendarTabContent({
 	events,
 }: CalendarTabContentProps) {
 	const [selectedDate, setSelectedDate] = React.useState<Date>(
-		startOfDay(new Date())
+		startOfDay(new Date()),
 	);
 	const [viewMode, setViewMode] =
 		React.useState<(typeof VIEW_OPTIONS)[number]['value']>('month');
 
 	const eventDays = React.useMemo(() => collectEventDays(events), [events]);
-
-	// Show events that either start on the selected day OR span/overlap the selected day
 	const selectedEvents = events.filter((event) => {
 		if (!event.startDate) return false;
 		const eventStart = startOfDay(event.startDate);
@@ -299,13 +297,11 @@ function CalendarTabContent({
 			: endOfDay(event.startDate!);
 		const dayStart = startOfDay(selectedDate);
 		const dayEnd = endOfDay(selectedDate);
-
-		// Intervals intersect when eventStart <= dayEnd && eventEnd >= dayStart
 		return !(eventStart > dayEnd || eventEnd < dayStart);
 	});
 	const upcomingEvents = React.useMemo(
 		() => getUpcomingEvents(events),
-		[events]
+		[events],
 	);
 
 	const config = CATEGORY_CONFIG[category];
@@ -366,7 +362,7 @@ function CalendarTabContent({
 							modifiersClassNames={{
 								wydarzenie: cn(
 									'relative font-semibold text-foreground',
-									config.highlightClass
+									config.highlightClass,
 								),
 							}}
 						/>
@@ -382,12 +378,12 @@ function CalendarTabContent({
 							{selectedEvents.length > 0
 								? `Na ten dzień zaplanowano ${
 										selectedEvents.length
-								  } ${pluralize(
+									} ${pluralize(
 										selectedEvents.length,
 										'wydarzenie',
 										'wydarzenia',
-										'wydarzeń'
-								  )}.`
+										'wydarzeń',
+									)}.`
 								: config.emptyHint}
 						</p>
 					</div>
@@ -563,12 +559,14 @@ function EventCard({
 							{event.allDay
 								? 'Cały dzień'
 								: event.durationMinutes &&
-								  event.durationMinutes > 0
-								? `${Math.max(
-										Math.round(event.durationMinutes / 60),
-										1
-								  )} h`
-								: 'Godziny do potwierdzenia'}
+									  event.durationMinutes > 0
+									? `${Math.max(
+											Math.round(
+												event.durationMinutes / 60,
+											),
+											1,
+										)} h`
+									: 'Godziny do potwierdzenia'}
 						</span>
 					</div>
 				) : null}
@@ -637,7 +635,7 @@ function IntegrationManager({
 						? formatDateTime(lastSyncValue)
 						: 'Brak danych';
 					const providerBadge = formatIntegrationProvider(
-						integration.provider_code
+						integration.provider_code,
 					);
 					const externalBadge = integration.primary_calendar;
 					const connectionLabel =
@@ -762,7 +760,7 @@ function detectCategory(event: CalendarEvent): CalendarCategory {
 }
 
 function isCalendarCategory(
-	value: string | undefined
+	value: string | undefined,
 ): value is CalendarCategory {
 	if (!value) {
 		return false;
@@ -828,29 +826,8 @@ function collectEventDays(events: EnrichedCalendarEvent[]): Date[] {
 	return Array.from(dates.values());
 }
 
-// function groupEventsByDay(
-// 	events: EnrichedCalendarEvent[]
-// ): Map<string, EnrichedCalendarEvent[]> {
-// 	const map = new Map<string, EnrichedCalendarEvent[]>();
-
-// 	events.forEach((event) => {
-// 		if (!event.startDate) {
-// 			return;
-// 		}
-// 		const startDayKey = format(event.startDate, 'yyyy-MM-dd');
-// 		const entries = map.get(startDayKey) ?? [];
-// 		entries.push(event);
-// 		entries.sort((a, b) =>
-// 			compareAsc(a.startDate ?? new Date(0), b.startDate ?? new Date(0))
-// 		);
-// 		map.set(startDayKey, entries);
-// 	});
-
-// 	return map;
-// }
-
 function getUpcomingEvents(
-	events: EnrichedCalendarEvent[]
+	events: EnrichedCalendarEvent[],
 ): EnrichedCalendarEvent[] {
 	const today = startOfDay(new Date());
 
@@ -862,7 +839,7 @@ function getUpcomingEvents(
 			return !isBefore(event.startDate, today);
 		})
 		.sort((a, b) =>
-			compareAsc(a.startDate ?? new Date(0), b.startDate ?? new Date(0))
+			compareAsc(a.startDate ?? new Date(0), b.startDate ?? new Date(0)),
 		);
 }
 
