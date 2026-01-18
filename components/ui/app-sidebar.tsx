@@ -4,7 +4,6 @@
 import {
 	Calendar,
 	Home,
-	User2,
 	UserSearch,
 	IdCardLanyard,
 	CalendarCog,
@@ -32,12 +31,11 @@ import { Link } from '@/i18n/navigation';
 
 export function AppSidebar() {
 	const t = useTranslations('Sidebar');
-	const { user, isOwner, isManager, isEmployee, locations } = useUser();
+	const { user, isOwner, isManager, locations } = useUser();
 	const navUser = {
 		name: user ? user.first_name : '',
 		surname: user ? user.last_name : '',
 		email: user ? user.email : '',
-		//avatar: 'https://i.pinimg.com/736x/5d/df/7f/5ddf7f72c2c0d387f0d1985154b171f5.jpg',
 	};
 
 	const locationNames =
@@ -91,12 +89,6 @@ export function AppSidebar() {
 			url: '/dashboard/admin/employees',
 			icon: UserSearch,
 			isVisible: isOwner,
-		},
-		{
-			title: t('workerPanel'),
-			url: '/worker',
-			icon: User2,
-			isVisible: isEmployee,
 		},
 		{
 			title: t('settings'),

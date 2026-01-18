@@ -158,7 +158,7 @@ export default function DemandForm() {
 		};
 
 		loadDefaultDemand();
-	}, [selectedLocation]);
+	}, [selectedLocation?.id]);
 
 	const addShift = (dayIndex: number) => {
 		setDayShifts((prev) => {

@@ -84,7 +84,7 @@ export function LocationSwitcher({
 						<DropdownMenuLabel className='text-muted-foreground text-xs'>
 							Locations
 						</DropdownMenuLabel>
-						{locations.map((location, index) => (
+						{locations.map((location) => (
 							<DropdownMenuItem
 								key={location}
 								onClick={() => setActiveLocation(location)}

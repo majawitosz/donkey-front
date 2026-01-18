@@ -65,7 +65,7 @@ export default function NewLocationForm() {
 	async function onSubmit(values: z.infer<typeof formSchema>) {
 		setLoading(true);
 		try {
-			await createLocation(values);
+			await createLocation({ name: values.name });
 			router.push('/dashboard');
 			router.refresh();
 		} catch (error) {

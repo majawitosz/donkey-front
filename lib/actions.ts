@@ -657,15 +657,15 @@ export async function submitDemand(
 
 export async function fetchDefaultDemand(
 	locationId: string,
-): Promise<components['schemas']['DefaultDemandOut']> {
+): Promise<components['schemas']['DefaultDemandWeekOut']> {
 	const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
-	const fullUrl = `${baseUrl}/schedule/demand/default`;
+	const fullUrl = `${baseUrl}/schedule/demand/default/week`;
 
 	const url = new URL(fullUrl);
 	url.searchParams.set('location', locationId);
 
 	const response = await apiRequest<
-		components['schemas']['DefaultDemandOut']
+		components['schemas']['DefaultDemandWeekOut']
 	>(
 		url,
 		{
@@ -691,6 +691,7 @@ export async function generateSchedule(
 	dateTo: string,
 	locationId: string,
 	force: boolean = false,
+	persist: boolean = true,
 ): Promise<components['schemas']['GenerateResultOut']> {
 	const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
 	const endpoint = `${baseUrl}/schedule/generate-range`;
@@ -701,7 +702,7 @@ export async function generateSchedule(
 		date_from: dateFrom,
 		date_to: dateTo,
 		location: location,
-		persist: true,
+		persist: persist,
 		force: force,
 		items: null,
 	};

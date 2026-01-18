@@ -41,7 +41,7 @@ export default function WebCheckIn() {
 						setMessage(
 							type === 'check_in'
 								? t('successStart')
-								: t('successEnd')
+								: t('successEnd'),
 						);
 					} else {
 						setStatus('error');
@@ -60,7 +60,7 @@ export default function WebCheckIn() {
 								? Math.round(errorData.radius)
 								: 'nieznany';
 							setMessage(
-								t('outsideZoneError', { distance, radius })
+								t('outsideZoneError', { distance, radius }),
 							);
 						} else if (
 							errorDetail === 'Company location not configured.'
@@ -77,12 +77,11 @@ export default function WebCheckIn() {
 					setLoading(false);
 				}
 			},
-			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 			(error) => {
 				setStatus('error');
 				setMessage(t('locationError', { message: error.message }));
 				setLoading(false);
-			}
+			},
 		);
 	};
 
