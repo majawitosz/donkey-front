@@ -41,7 +41,7 @@ export default function ScheduleGenerator() {
 				const result = await generateSchedule(
 					dateFrom,
 					dateTo,
-					selectedLocation.id.toString(),
+					selectedLocation.name,
 					false,
 				);
 

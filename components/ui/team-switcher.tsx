@@ -18,28 +18,37 @@ import {
 	DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { ChevronsUpDown, Plus } from 'lucide-react';
-import { useState } from 'react';
 import { Avatar, AvatarFallback } from '@radix-ui/react-avatar';
 import { Link } from '@/i18n/navigation';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function LocationSwitcher({
 	locations,
 	isOwner,
+	selectedLocation,
+	onLocationSelect,
 }: {
 	locations: string[];
 	isOwner: boolean;
+	selectedLocation?: string;
+	onLocationSelect?: (location: string) => void;
 }) {
 	const { isMobile } = useSidebar();
-	const [activeLocation, setActiveLocation] = useState(locations[0]);
-
-	React.useEffect(() => {
-		if (locations.length > 0) {
-			setActiveLocation(locations[0]);
-		}
-	}, [locations]);
+	const activeLocation = selectedLocation;
 
 	if (!activeLocation) {
-		return null;
+		return (
+			<SidebarMenu>
+				<SidebarMenuItem>
+					<SidebarMenuButton size='lg'>
+						<Skeleton className='h-8 w-8 rounded-lg' />
+						<div className='grid flex-1 gap-1'>
+							<Skeleton className='h-4 w-24' />
+						</div>
+					</SidebarMenuButton>
+				</SidebarMenuItem>
+			</SidebarMenu>
+		);
 	}
 
 	const getInitials = (name: string) => {
@@ -87,7 +96,7 @@ export function LocationSwitcher({
 						{locations.map((location) => (
 							<DropdownMenuItem
 								key={location}
-								onClick={() => setActiveLocation(location)}
+								onClick={() => onLocationSelect?.(location)}
 								className='gap-2 p-2'>
 								<div className='flex size-6 items-center justify-center rounded-md border'>
 									<span className='text-xs'>

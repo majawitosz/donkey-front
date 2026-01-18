@@ -69,9 +69,9 @@ export default function WorkerWeeklyScheduleView() {
 				const result = await generateSchedule(
 					dateFrom,
 					dateTo,
-					selectedLocation.id.toString(),
+					selectedLocation.name,
 					false,
-					false, // persist=false prevents saving/generating if defaults missing?
+					false, // persist
 				);
 
 				setScheduleData(result);

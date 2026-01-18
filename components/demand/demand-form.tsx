@@ -117,7 +117,7 @@ export default function DemandForm() {
 			try {
 				setIsLoading(true);
 				const defaultDemand = await fetchDefaultDemand(
-					selectedLocation.id.toString(),
+					selectedLocation.name,
 				);
 				if (
 					defaultDemand.defaults &&
@@ -158,7 +158,7 @@ export default function DemandForm() {
 		};
 
 		loadDefaultDemand();
-	}, [selectedLocation?.id]);
+	}, [selectedLocation?.name]);
 
 	const addShift = (dayIndex: number) => {
 		setDayShifts((prev) => {
@@ -229,7 +229,7 @@ export default function DemandForm() {
 
 			const result = await submitDemand(
 				shiftsPerDay,
-				selectedLocation.id.toString(),
+				selectedLocation.name,
 			);
 
 			showAlert({

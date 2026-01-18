@@ -31,7 +31,14 @@ import { Link } from '@/i18n/navigation';
 
 export function AppSidebar() {
 	const t = useTranslations('Sidebar');
-	const { user, isOwner, isManager, locations } = useUser();
+	const {
+		user,
+		isOwner,
+		isManager,
+		locations,
+		selectedLocation,
+		setSelectedLocation,
+	} = useUser();
 	const navUser = {
 		name: user ? user.first_name : '',
 		surname: user ? user.last_name : '',
@@ -39,7 +46,14 @@ export function AppSidebar() {
 	};
 
 	const locationNames =
-		locations.length > 0 ? locations.map((l) => l.name) : ['Fallback...'];
+		locations.length > 0 ? locations.map((l) => l.name) : [];
+
+	const handleLocationSelect = (name: string) => {
+		const loc = locations.find((l) => l.name === name);
+		if (loc) {
+			setSelectedLocation(loc);
+		}
+	};
 
 	const data = [
 		{
@@ -103,7 +117,12 @@ export function AppSidebar() {
 	return (
 		<Sidebar collapsible='icon'>
 			<SidebarHeader>
-				<LocationSwitcher locations={locationNames} isOwner={isOwner} />
+				<LocationSwitcher
+					locations={locationNames}
+					isOwner={isOwner}
+					selectedLocation={selectedLocation?.name}
+					onLocationSelect={handleLocationSelect}
+				/>
 			</SidebarHeader>
 			<SidebarContent>
 				<SidebarGroup>
