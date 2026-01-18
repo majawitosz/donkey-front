@@ -70,6 +70,12 @@ export function UserProvider({
 		fetchLocations();
 	}, [value?.id, authFetch]);
 
+	useEffect(() => {
+		if (locations.length > 0 && !selectedLocation) {
+			setSelectedLocation(locations[0]);
+		}
+	}, [locations, selectedLocation]);
+
 	const contextValue: UserContextType = {
 		user: value,
 		locations,

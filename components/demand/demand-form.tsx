@@ -65,7 +65,7 @@ const createEmptyShift = (): Shift => ({
 });
 
 export default function DemandForm() {
-	const { selectedLocation } = useUser();
+	const { selectedLocation, isLoadingLocations } = useUser();
 	const { showAlert } = useAlert();
 	const [isSubmitting, setIsSubmitting] = useState(false);
 	const [isLoading, setIsLoading] = useState(true);
@@ -113,7 +113,12 @@ export default function DemandForm() {
 	});
 	useEffect(() => {
 		const loadDefaultDemand = async () => {
-			if (!selectedLocation) return;
+			if (!selectedLocation) {
+				if (!isLoadingLocations) {
+					setIsLoading(false);
+				}
+				return;
+			}
 			try {
 				setIsLoading(true);
 				const defaultDemand = await fetchDefaultDemand(
@@ -158,7 +163,7 @@ export default function DemandForm() {
 		};
 
 		loadDefaultDemand();
-	}, [selectedLocation?.name]);
+	}, [selectedLocation?.name, isLoadingLocations]);
 
 	const addShift = (dayIndex: number) => {
 		setDayShifts((prev) => {
