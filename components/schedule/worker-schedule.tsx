@@ -14,7 +14,7 @@ import { pl } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { generateSchedule } from '@/lib/actions';
+import { generateSchedule, getWorkerScheduleAction } from '@/lib/actions';
 import { Spinner } from '@/components/ui/spinner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAlert } from '@/providers/alert-provider';
@@ -66,25 +66,24 @@ export default function WorkerWeeklyScheduleView() {
 			try {
 				const dateFrom = format(currentWeekStart, 'yyyy-MM-dd');
 				const dateTo = format(currentWeekEnd, 'yyyy-MM-dd');
-				const result = await generateSchedule(
+				const result = await getWorkerScheduleAction(
 					dateFrom,
 					dateTo,
 					selectedLocation.name,
-					false,
-					false, // persist
 				);
 
 				setScheduleData(result);
 			} catch (error) {
 				console.error('Error loading schedule:', error);
-				const isBadRequest =
+				const isIgnorableError =
 					error instanceof Error &&
 					(error.message.includes('400') ||
+						error.message.includes('500') ||
 						error.message.includes(
 							'Brak domyślnego zapotrzebowania',
 						));
 
-				if (!isBadRequest) {
+				if (!isIgnorableError) {
 					showAlert({
 						title: 'Błąd',
 						description: 'Nie udało się załadować grafiku',

@@ -704,7 +704,8 @@ export async function generateSchedule(
 		location: location,
 		persist: persist,
 		force: force,
-		items: null,
+		// Omit items completely to let backend use default demand or existing demand
+		// items: null,
 	};
 
 	const response = await apiRequest<
@@ -723,6 +724,29 @@ export async function generateSchedule(
 
 	console.dir(response, { depth: null });
 	return response;
+}
+
+export async function getWorkerScheduleAction(
+	dateFrom: string,
+	dateTo: string,
+	locationId: string,
+): Promise<components['schemas']['GenerateResultOut'] | null> {
+	try {
+		return await generateSchedule(
+			dateFrom,
+			dateTo,
+			locationId,
+			false,
+			false,
+		);
+	} catch (error) {
+		// Log error but don't throw, return null to indicate no schedule available
+		console.log(
+			'Worker schedule fetch skipped (likely no demand/schedule):',
+			error instanceof Error ? error.message : 'Unknown error',
+		);
+		return null;
+	}
 }
 
 export async function fetchEmployeeDetails(
