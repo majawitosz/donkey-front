@@ -1,6 +1,5 @@
 /** @format */
 
-// providers/user-provider.tsx
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
@@ -49,11 +48,6 @@ export function UserProvider({
 	useEffect(() => {
 		const fetchLocations = async () => {
 			if (!value) return;
-
-			// Jeśli użytkownik nie jest managerem ani właścicielem, może nie mieć dostępu do wszystkich lokalizacji,
-			// ale endpoint zdaje się zwracać lokalizacje "powiązane z firmą", więc dla pracownika też powinno działać.
-			// Sprawdźmy jednak czy warto pobierać.
-
 			setIsLoadingLocations(true);
 			try {
 				const response = await authFetch(
@@ -62,7 +56,6 @@ export function UserProvider({
 				if (response.ok) {
 					const data = await response.json();
 					setLocations(data);
-					// Domyślnie wybierz pierwszą lokalizację, jeśli żadna nie jest wybrana
 					if (data.length > 0 && !selectedLocation) {
 						setSelectedLocation(data[0]);
 					}
@@ -75,7 +68,7 @@ export function UserProvider({
 		};
 
 		fetchLocations();
-	}, [value?.id, authFetch]); // Zależy od ID użytkownika
+	}, [value?.id, authFetch]);
 
 	const contextValue: UserContextType = {
 		user: value,
@@ -94,14 +87,10 @@ export function UserProvider({
 
 export function useUser() {
 	const context = useContext(UserContext);
-
 	if (!context) {
 		throw new Error('useUser must be used within a UserProvider');
 	}
-
 	const { user } = context;
-
-	// Możemy dodać helpery
 	const isOwner = user?.role === RoleEnum.OWNER;
 	const isManager = user?.role === RoleEnum.MANAGER;
 	const isEmployee = user?.role === RoleEnum.EMPLOYEE;

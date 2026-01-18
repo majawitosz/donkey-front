@@ -948,3 +948,22 @@ export async function saveWorkplaceConfig(data: WorkplaceConfig) {
 		'Failed to save workplace config',
 	);
 }
+
+//TODO: change when bancked done
+export interface CreateLocationData {
+	name: string;
+	// latitude: number;
+	// longitude: number;
+	// radius: number;
+}
+export async function createLocation(data: CreateLocationData) {
+	return await apiRequest(
+		'api/schedule/locations',
+		{
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(data),
+		},
+		'Failed to create location',
+	);
+}

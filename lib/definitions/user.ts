@@ -19,12 +19,8 @@ export type User = {
 	email: string;
 	first_name: string;
 	last_name: string;
-	full_name: string;
 	role: RoleEnum;
 	company_id: number;
-	company_name: string;
-	is_active: boolean;
-	is_staff: boolean;
 	accessToken: string;
 	refreshToken: string;
 };

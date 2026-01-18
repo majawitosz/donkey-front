@@ -20,7 +20,6 @@ interface WeeklyAvailabilityViewProps {
 	onClose: () => void;
 }
 
-// Generujemy godziny od 6:00 do 22:00
 const generateHours = () => {
 	const hours: number[] = [];
 	for (let hour = 6; hour <= 22; hour++) {
@@ -30,16 +29,14 @@ const generateHours = () => {
 };
 
 const hours = generateHours();
-const HOUR_HEIGHT = 60; // Wysokość jednej godziny w pikselach
+const HOUR_HEIGHT = 60; 
 
-// Konwertuje czas (HH:MM) na offset w pikselach od początku dnia
 const timeToPixels = (time: string): number => {
 	const [h, m] = time.split(':').map(Number);
-	const totalMinutes = (h - 6) * 60 + m; // Odejmujemy 6 bo zaczynamy od 6:00
+	const totalMinutes = (h - 6) * 60 + m; 
 	return (totalMinutes / 60) * HOUR_HEIGHT;
 };
 
-// Pobiera sloty dla konkretnego dnia
 const getSlotsForDay = (
 	date: Date,
 	availabilityData: AvailabilityOut[]

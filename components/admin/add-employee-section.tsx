@@ -14,13 +14,15 @@ import { EyeClosed, EyeIcon } from 'lucide-react';
 import { useAlert } from '@/providers/alert-provider';
 import type { components } from '@/lib/types/openapi';
 import { useTranslations } from 'next-intl';
+import { useUser } from '@/providers/user-provider';
 
 type CompanyCodeResponse = components['schemas']['CompanyCode'];
 
 export default function AddEmployeeSection() {
 	const t = useTranslations('Admin');
+	const { isOwner } = useUser();
 	const [companyCode, setCompanyCode] = useState<CompanyCodeResponse | null>(
-		null
+		null,
 	);
 	const [employeeCount, setEmployeeCount] = useState<number>(0);
 	const [loading, setLoading] = useState(false);
@@ -115,13 +117,15 @@ export default function AddEmployeeSection() {
 				)}
 			</div>
 
-			<Button
-				onClick={handleGenerateCode}
-				disabled={loading}
-				className='bg-black text-white hover:bg-black/90 w-1/2'>
-				{loading && <Spinner className='mr-2 h-4 w-4' />}
-				{companyCode ? t('generateNewCode') : t('generateCode')}
-			</Button>
+			{isOwner && (
+				<Button
+					onClick={handleGenerateCode}
+					disabled={loading}
+					className='bg-black text-white hover:bg-black/90 w-1/2'>
+					{loading && <Spinner className='mr-2 h-4 w-4' />}
+					{companyCode ? t('generateNewCode') : t('generateCode')}
+				</Button>
+			)}
 		</Card>
 	);
 }
