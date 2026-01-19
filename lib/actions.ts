@@ -705,7 +705,7 @@ export async function generateSchedule(
 		persist: persist,
 		force: force,
 		// Omit items completely to let backend use default demand or existing demand
-		// items: null,
+		items: null,
 	};
 
 	const response = await apiRequest<

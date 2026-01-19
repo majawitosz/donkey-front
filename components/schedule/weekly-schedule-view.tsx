@@ -106,7 +106,12 @@ function DaySummaryBlock({
 		totalDemand += s.demand;
 		const assignedCount = s.assigned_employees.length;
 		totalAssigned += assignedCount;
-		if (assignedCount < s.demand) hasUnstaffed = true;
+		if (
+			assignedCount < s.demand ||
+			(s.missing_minutes && s.missing_minutes > 0) ||
+			(s.missing_segments && s.missing_segments.length > 0)
+		)
+			hasUnstaffed = true;
 	});
 
 	let bgColor = 'bg-blue-500/90 dark:bg-blue-600/80';

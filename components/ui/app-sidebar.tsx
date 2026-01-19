@@ -120,7 +120,11 @@ export function AppSidebar() {
 				<LocationSwitcher
 					locations={locationNames}
 					isOwner={isOwner}
-					selectedLocation={selectedLocation?.name}
+					selectedLocation={
+						selectedLocation
+							? selectedLocation.name
+							: locations[0]?.name
+					}
 					onLocationSelect={handleLocationSelect}
 				/>
 			</SidebarHeader>

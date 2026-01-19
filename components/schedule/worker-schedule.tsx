@@ -12,9 +12,8 @@ import {
 } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-
 import { Button } from '@/components/ui/button';
-import { generateSchedule, getWorkerScheduleAction } from '@/lib/actions';
+import { getWorkerScheduleAction } from '@/lib/actions';
 import { Spinner } from '@/components/ui/spinner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAlert } from '@/providers/alert-provider';
