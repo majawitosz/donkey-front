@@ -32,7 +32,7 @@ export function UserProvider({
 	const [selectedLocation, setSelectedLocation] =
 		useState<CompanyLocationOut | null>(null);
 	const [isLoadingLocations, setIsLoadingLocations] = useState(false);
-	const { data } = useSession();
+	const { data, status } = useSession();
 	const authFetch = useAuthFetch();
 
 	useEffect(() => {
@@ -48,6 +48,8 @@ export function UserProvider({
 	useEffect(() => {
 		const fetchLocations = async () => {
 			if (!value) return;
+			if (status !== 'authenticated') return;
+
 			setIsLoadingLocations(true);
 			try {
 				const response = await authFetch(
@@ -68,7 +70,7 @@ export function UserProvider({
 		};
 
 		fetchLocations();
-	}, [value?.id, authFetch]);
+	}, [value?.id, authFetch, status]);
 
 	useEffect(() => {
 		if (locations.length > 0 && !selectedLocation) {
